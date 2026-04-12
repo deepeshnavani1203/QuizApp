@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -38,16 +37,6 @@ dependencies {
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
     // Lottie Animations
     implementation("com.airbnb.android:lottie:6.4.1")
 

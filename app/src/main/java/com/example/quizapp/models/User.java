@@ -1,0 +1,29 @@
+package com.example.quizapp.models;
+
+import java.io.Serializable;
+
+public class User implements Serializable {
+    private String name;
+    private String email;
+    private int lastScore;
+    private String lastCategory;
+
+    public User() {}
+
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public int getLastScore() { return lastScore; }
+    public void setLastScore(int lastScore) { this.lastScore = lastScore; }
+
+    public String getLastCategory() { return lastCategory; }
+    public void setLastCategory(String lastCategory) { this.lastCategory = lastCategory; }
+}
