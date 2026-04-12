@@ -3,8 +3,10 @@ package com.example.quizapp.ui.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
@@ -17,7 +19,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private TextInputEditText emailInput, passwordInput;
     private Button loginBtn;
-    private TextView registerLink;
+    private TextView registerLink, errorTextView;
+    private ProgressBar progressBar;
     private SharedPreferencesManager prefManager;
 
     @Override
@@ -37,8 +40,11 @@ public class LoginActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.passwordInput);
         loginBtn = findViewById(R.id.loginBtn);
         registerLink = findViewById(R.id.registerLink);
+        errorTextView = findViewById(R.id.errorTextView);
+        progressBar = findViewById(R.id.progressBar);
 
         loginBtn.setOnClickListener(v -> {
+            errorTextView.setVisibility(android.view.View.GONE);
             String email = emailInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
@@ -46,6 +52,9 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            progressBar.setVisibility(android.view.View.VISIBLE);
+            loginBtn.setEnabled(false);
 
             new Thread(() -> {
                 try {
@@ -58,18 +67,29 @@ public class LoginActivity extends AppCompatActivity {
                         prefManager.saveBackendUser(userId, name, userEmail);
                         prefManager.setLoggedIn(true);
                         runOnUiThread(() -> {
+                            progressBar.setVisibility(android.view.View.GONE);
+                            loginBtn.setEnabled(true);
                             Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(this, MainActivity.class));
                             finish();
                         });
                     } else {
-                        runOnUiThread(() -> Toast
-                                .makeText(this, "Invalid credentials or server error", Toast.LENGTH_SHORT).show());
+                        Log.e("AuthError", "Login failed: Server response is null or invalid user object.");
+                        runOnUiThread(() -> {
+                            progressBar.setVisibility(android.view.View.GONE);
+                            loginBtn.setEnabled(true);
+                            errorTextView.setText("Invalid credentials or server unavailable.");
+                            errorTextView.setVisibility(android.view.View.VISIBLE);
+                        });
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    runOnUiThread(() -> Toast.makeText(this, "Unable to login. Check your network.", Toast.LENGTH_SHORT)
-                            .show());
+                    Log.e("AuthError", "Exception during login process.", e);
+                    runOnUiThread(() -> {
+                        progressBar.setVisibility(android.view.View.GONE);
+                        loginBtn.setEnabled(true);
+                        errorTextView.setText("Unable to connect. Error: " + e.getMessage());
+                        errorTextView.setVisibility(android.view.View.VISIBLE);
+                    });
                 }
             }).start();
         });

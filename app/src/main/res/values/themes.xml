@@ -14,8 +14,6 @@
         <item name="colorOnSecondaryContainer">#001D36</item>
 
         <!-- Background/Surface -->
-        <item name="android:statusBarColor">#6200EE</item>
-        <item name="android:windowBackground">#FBFDFF</item>
     </style>
 
     <style name="Theme.QuizApp" parent="Base.Theme.QuizApp" />

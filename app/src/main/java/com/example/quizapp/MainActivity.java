@@ -35,6 +35,23 @@ public class MainActivity extends AppCompatActivity {
 
         userNameText.setText("Ready, " + prefManager.getUserName() + "?");
 
+        String userId = prefManager.getUserId();
+        if (userId != null) {
+            new Thread(() -> {
+                try {
+                    org.json.JSONObject userProfile = com.example.quizapp.utils.BackendService.getUserProfile(userId);
+                    if (userProfile != null) {
+                        String name = userProfile.optString("name", prefManager.getUserName());
+                        String email = userProfile.optString("email", prefManager.getUserEmail());
+                        prefManager.saveBackendUser(userId, name, email);
+                        runOnUiThread(() -> {
+                            userNameText.setText("Ready, " + name + "?");
+                        });
+                    }
+                } catch (Exception e) {}
+            }).start();
+        }
+
         categoryRecyclerView = findViewById(R.id.categoryRecyclerView);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
@@ -52,14 +69,14 @@ public class MainActivity extends AppCompatActivity {
         subtitleText.setText(isLearnMode ? "Master your skills - All Questions" : "Challenge yourself - 20 Questions");
 
         List<String> categories = Arrays.asList(
-                "Java Basics",
-                "C Programming",
-                "C++ Basics",
-                "Python Basics",
-                "JavaScript Basics",
-                "Git Fundamentals",
-                "Operating Systems",
-                "ReactJS",
+                "Java",
+                "C",
+                "C++",
+                "Python",
+                "JS",
+                "Git",
+                "OS",
+                "React",
                 "Node.js",
                 "DBMS");
 

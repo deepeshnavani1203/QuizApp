@@ -14,16 +14,13 @@ public class SharedPreferencesManager {
     private static final String KEY_TOTAL_QUIZZES = "totalQuizzes";
 
     private SharedPreferences sharedPreferences;
-    private SharedPreferences.Editor editor;
 
     public SharedPreferencesManager(Context context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        editor = sharedPreferences.edit();
     }
 
     public void setLoggedIn(boolean isLoggedIn) {
-        editor.putBoolean(KEY_LOGGED_IN, isLoggedIn);
-        editor.apply();
+        sharedPreferences.edit().putBoolean(KEY_LOGGED_IN, isLoggedIn).commit();
     }
 
     public boolean isLoggedIn() {
@@ -31,17 +28,19 @@ public class SharedPreferencesManager {
     }
 
     public void saveUser(String name, String email, String password) {
-        editor.putString(KEY_USER_NAME, name);
-        editor.putString(KEY_USER_EMAIL, email);
-        editor.putString(KEY_PASSWORD, password);
-        editor.apply();
+        sharedPreferences.edit()
+            .putString(KEY_USER_NAME, name)
+            .putString(KEY_USER_EMAIL, email)
+            .putString(KEY_PASSWORD, password)
+            .commit();
     }
 
     public void saveBackendUser(String userId, String name, String email) {
-        editor.putString(KEY_USER_ID, userId);
-        editor.putString(KEY_USER_NAME, name);
-        editor.putString(KEY_USER_EMAIL, email);
-        editor.apply();
+        sharedPreferences.edit()
+            .putString(KEY_USER_ID, userId)
+            .putString(KEY_USER_NAME, name)
+            .putString(KEY_USER_EMAIL, email)
+            .commit();
     }
 
     public boolean validateLogin(String email, String password) {
@@ -63,9 +62,10 @@ public class SharedPreferencesManager {
     }
 
     public void addStats(int score) {
-        editor.putInt(KEY_TOTAL_SCORE, getTotalScore() + score);
-        editor.putInt(KEY_TOTAL_QUIZZES, getTotalQuizzes() + 1);
-        editor.apply();
+        sharedPreferences.edit()
+            .putInt(KEY_TOTAL_SCORE, getTotalScore() + score)
+            .putInt(KEY_TOTAL_QUIZZES, getTotalQuizzes() + 1)
+            .apply();
     }
 
     public int getTotalScore() {
@@ -76,8 +76,14 @@ public class SharedPreferencesManager {
         return sharedPreferences.getInt(KEY_TOTAL_QUIZZES, 0);
     }
 
+    public void clearStatsOnly() {
+        sharedPreferences.edit()
+            .putInt(KEY_TOTAL_SCORE, 0)
+            .putInt(KEY_TOTAL_QUIZZES, 0)
+            .commit();
+    }
+
     public void clearData() {
-        editor.clear();
-        editor.apply();
+        sharedPreferences.edit().clear().commit();
     }
 }

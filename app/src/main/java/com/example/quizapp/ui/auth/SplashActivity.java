@@ -25,6 +25,15 @@ public class SplashActivity extends AppCompatActivity {
 
         new Handler().postDelayed(() -> {
             SharedPreferencesManager prefManager = new SharedPreferencesManager(this);
+            
+            // ONE-TIME CLEANUP LOGIC
+            android.content.SharedPreferences prefs = getSharedPreferences("CleanupPrefs", MODE_PRIVATE);
+            if (!prefs.getBoolean("is_cleaned_v1", false)) {
+                prefManager.clearData();
+                new com.example.quizapp.utils.DatabaseHelper(this).clearHistory();
+                prefs.edit().putBoolean("is_cleaned_v1", true).apply();
+            }
+
             Intent intent;
             if (prefManager.isLoggedIn()) {
                 intent = new Intent(SplashActivity.this, MainActivity.class);

@@ -27,7 +27,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private RecyclerView historyRecyclerView;
     private TextView profileName, profileEmail, totalQuizzesText, avgScoreText;
-    private Button logoutBtn, resetDataBtn;
+    private Button logoutBtn;
     private BottomNavigationView bottomNavigation;
     private SharedPreferencesManager prefManager;
 
@@ -44,10 +44,27 @@ public class ProfileActivity extends AppCompatActivity {
         historyRecyclerView = findViewById(R.id.historyRecyclerView);
         bottomNavigation = findViewById(R.id.bottomNavigation);
         logoutBtn = findViewById(R.id.logoutBtn);
-        resetDataBtn = findViewById(R.id.resetDataBtn);
 
         profileName.setText(prefManager.getUserName());
         profileEmail.setText(prefManager.getUserEmail());
+
+        String userId = prefManager.getUserId();
+        if (userId != null) {
+            new Thread(() -> {
+                try {
+                    JSONObject userProfile = BackendService.getUserProfile(userId);
+                    if (userProfile != null) {
+                        String name = userProfile.optString("name", prefManager.getUserName());
+                        String email = userProfile.optString("email", prefManager.getUserEmail());
+                        prefManager.saveBackendUser(userId, name, email);
+                        runOnUiThread(() -> {
+                            profileName.setText(name);
+                            profileEmail.setText(email);
+                        });
+                    }
+                } catch (Exception e) {}
+            }).start();
+        }
 
         setupHistory();
         setupNavigation();
@@ -58,7 +75,6 @@ public class ProfileActivity extends AppCompatActivity {
             finishAffinity();
         });
 
-        resetDataBtn.setOnClickListener(v -> showResetDialog());
     }
 
     private void setupHistory() {
@@ -91,7 +107,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                     total = results.size();
                     if (total > 0) {
-                        avg = (double) sumScore / total;
+                        avg = Math.max(0.0, (double) sumScore / total);
                     }
                 }
             } catch (Exception e) {
@@ -121,26 +137,14 @@ public class ProfileActivity extends AppCompatActivity {
         int total = prefManager.getTotalQuizzes();
         totalQuizzesText.setText(String.valueOf(total));
         if (total > 0) {
-            double avg = (double) prefManager.getTotalScore() / total;
+            double avg = Math.max(0.0, (double) prefManager.getTotalScore() / total);
             avgScoreText.setText(String.format(Locale.getDefault(), "%.1f pts", avg));
         } else {
             avgScoreText.setText("0 pts");
         }
     }
 
-    private void showResetDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Reset All Data?")
-                .setMessage("This will clear your history and stats. Action cannot be undone.")
-                .setPositiveButton("RESET", (dialog, which) -> {
-                    prefManager.clearData();
-                    new DatabaseHelper(this).clearHistory();
-                    Toast.makeText(this, "Data Reset Successful", Toast.LENGTH_SHORT).show();
-                    recreate();
-                })
-                .setNegativeButton("CANCEL", null)
-                .show();
-    }
+
 
     private void setupNavigation() {
         bottomNavigation.setSelectedItemId(R.id.nav_profile);

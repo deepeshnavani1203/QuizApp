@@ -4,8 +4,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
@@ -18,7 +20,8 @@ public class RegisterActivity extends AppCompatActivity {
 
     private EditText nameInput, emailInput, passwordInput;
     private Button registerBtn;
-    private TextView loginLink;
+    private TextView loginLink, errorTextView;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,8 +33,11 @@ public class RegisterActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.passwordInput);
         registerBtn = findViewById(R.id.registerBtn);
         loginLink = findViewById(R.id.loginLink);
+        errorTextView = findViewById(R.id.errorTextView);
+        progressBar = findViewById(R.id.progressBar);
 
         registerBtn.setOnClickListener(v -> {
+            errorTextView.setVisibility(android.view.View.GONE);
             String name = nameInput.getText().toString().trim();
             String email = emailInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
@@ -41,26 +47,41 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
 
+            progressBar.setVisibility(android.view.View.VISIBLE);
+            registerBtn.setEnabled(false);
+
             SharedPreferencesManager prefManager = new SharedPreferencesManager(this);
             new Thread(() -> {
                 try {
                     JSONObject response = BackendService.signup(name, email, password);
-                    if (response != null && response.has("id")) {
-                        String userId = response.optString("id");
+                    if (response != null && response.has("user")) {
+                        JSONObject user = response.getJSONObject("user");
+                        String userId = user.optString("id");
                         prefManager.saveBackendUser(userId, name, email);
-                        prefManager.setLoggedIn(true);
                         runOnUiThread(() -> {
-                            Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(this, MainActivity.class));
+                            progressBar.setVisibility(android.view.View.GONE);
+                            registerBtn.setEnabled(true);
+                            Toast.makeText(this, "Registration successful. Please login.", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(this, LoginActivity.class));
                             finish();
                         });
                     } else {
-                        runOnUiThread(() -> Toast.makeText(this, "Registration failed", Toast.LENGTH_SHORT).show());
+                        Log.e("AuthError", "Signup failed: Server response is null or missing user.");
+                        runOnUiThread(() -> {
+                            progressBar.setVisibility(android.view.View.GONE);
+                            registerBtn.setEnabled(true);
+                            errorTextView.setText("Registration failed or user already exists.");
+                            errorTextView.setVisibility(android.view.View.VISIBLE);
+                        });
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    runOnUiThread(() -> Toast
-                            .makeText(this, "Unable to register. Check your network.", Toast.LENGTH_SHORT).show());
+                    Log.e("AuthError", "Exception during signup process.", e);
+                    runOnUiThread(() -> {
+                        progressBar.setVisibility(android.view.View.GONE);
+                        registerBtn.setEnabled(true);
+                        errorTextView.setText("Unable to connect. Error: " + e.getMessage());
+                        errorTextView.setVisibility(android.view.View.VISIBLE);
+                    });
                 }
             }).start();
         });

@@ -15,7 +15,7 @@ import java.net.URL;
 
 public class BackendService {
     private static final String TAG = "BackendService";
-    public static final String BASE_URL = "http://10.0.2.2:5000";
+    public static final String BASE_URL = "http://172.22.19.34:5000";
 
     private static String doGet(String endpoint) throws IOException {
         HttpURLConnection connection = null;
@@ -106,29 +106,35 @@ public class BackendService {
         return builder.toString();
     }
 
-    public static JSONObject login(String email, String password) {
-        try {
-            JSONObject payload = new JSONObject();
-            payload.put("email", email);
-            payload.put("password", password);
-            String response = doPost("/api/users/login", payload);
-            return response == null ? null : new JSONObject(response);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            return null;
+    public static JSONObject login(String email, String password) throws Exception {
+        JSONObject payload = new JSONObject();
+        payload.put("email", email);
+        payload.put("password", password);
+        String response = doPost("/api/users/login", payload);
+        if (response == null) {
+             throw new Exception("Server rejected login. Check credentials.");
         }
+        return new JSONObject(response);
     }
 
-    public static JSONObject signup(String name, String email, String password) {
+    public static JSONObject signup(String name, String email, String password) throws Exception {
+        JSONObject payload = new JSONObject();
+        payload.put("name", name);
+        payload.put("email", email);
+        payload.put("password", password);
+        String response = doPost("/api/users/signup", payload);
+        if (response == null) {
+            throw new Exception("Registration rejected. User already exists or server issue.");
+        }
+        return new JSONObject(response);
+    }
+
+    public static JSONObject getUserProfile(String userId) {
         try {
-            JSONObject payload = new JSONObject();
-            payload.put("name", name);
-            payload.put("email", email);
-            payload.put("password", password);
-            String response = doPost("/api/users/signup", payload);
+            String response = doGet("/api/users/" + userId);
             return response == null ? null : new JSONObject(response);
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

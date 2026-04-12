@@ -39,11 +39,12 @@ import org.json.JSONObject;
 
 public class QuizActivity extends AppCompatActivity {
 
-    private static final String BACKEND_BASE_URL = "http://10.0.2.2:5000";
-
-    private TextView timerText, questionText, progressText;
+    // Removed hardcoded URL, now directly uses BackendService.BASE_URL
+    private TextView timerText, questionText, progressText, scoreText, categoryTitleTop;
     private RecyclerView optionsRecyclerView;
     private Button nextBtn, prevBtn;
+    private View skeletonLayout;
+    private androidx.constraintlayout.widget.Group quizContentGroup;
 
     private List<Question> questionList;
     private int currentQuestionIndex = 0;
@@ -54,6 +55,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private CountDownTimer countDownTimer;
     private boolean isQuizFinished = false;
+    private int sessionScore = 0;
     private OptionAdapter adapter;
     private SharedPreferencesManager prefManager;
 
@@ -69,9 +71,13 @@ public class QuizActivity extends AppCompatActivity {
         timerText = findViewById(R.id.timerText);
         questionText = findViewById(R.id.questionText);
         progressText = findViewById(R.id.progressText);
+        scoreText = findViewById(R.id.scoreText);
+        categoryTitleTop = findViewById(R.id.categoryTitleTop);
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView);
         nextBtn = findViewById(R.id.nextBtn);
         prevBtn = findViewById(R.id.prevBtn);
+        skeletonLayout = findViewById(R.id.skeletonLayout);
+        quizContentGroup = findViewById(R.id.quizContentGroup);
 
         category = getIntent().getStringExtra("CATEGORY");
         difficulty = getIntent().getStringExtra("DIFFICULTY");
@@ -89,7 +95,7 @@ public class QuizActivity extends AppCompatActivity {
 
         setupOptionsList();
 
-        nextBtn.setOnClickListener(v -> handleNextClick());
+        nextBtn.setOnClickListener(v -> handleNextClick(false));
         prevBtn.setOnClickListener(v -> handlePrevClick());
 
         SecurityHelper.enableDnd(this, true);
@@ -100,12 +106,19 @@ public class QuizActivity extends AppCompatActivity {
         new Thread(() -> {
             List<Question> fetched = fetchQuestionsFromBackend(category, difficulty, isLearnMode);
             runOnUiThread(() -> {
+                skeletonLayout.setVisibility(View.GONE);
+                quizContentGroup.setVisibility(View.VISIBLE);
+                
                 if (fetched != null && !fetched.isEmpty()) {
                     questionList = fetched;
                     currentQuestionIndex = 0;
                     displayQuestion();
-                    if (!isLearnMode)
+                    if (!isLearnMode) {
+                        scoreText.setVisibility(View.VISIBLE);
                         startTimer();
+                    } else {
+                        scoreText.setVisibility(View.GONE);
+                    }
                 } else {
                     useFallbackQuestions();
                 }
@@ -155,17 +168,34 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
+    private String mapLocalCategoryToBackend(String category) {
+        switch (category) {
+            case "Java": return "Java Basics";
+            case "C": return "C Programming";
+            case "C++": return "C++ Basics";
+            case "Python": return "Python Basics";
+            case "JS": return "JavaScript Basics";
+            case "Git": return "Git Fundamentals";
+            case "OS": return "Operating Systems";
+            case "React": return "ReactJS";
+            case "Node.js": return "Node.js";
+            case "DBMS": return "DBMS";
+            default: return category;
+        }
+    }
+
     private List<Question> fetchQuestionsFromBackend(String category, String difficulty, boolean isLearnMode) {
         try {
-            String quizzesResponse = getJsonFromUrl(BACKEND_BASE_URL + "/api/quizzes");
+            String quizzesResponse = getJsonFromUrl(BackendService.BASE_URL + "/api/quizzes");
             if (quizzesResponse == null)
                 return null;
 
             JSONArray quizzes = new JSONArray(quizzesResponse);
             String quizId = null;
+            String backendCategory = mapLocalCategoryToBackend(category);
             for (int i = 0; i < quizzes.length(); i++) {
                 JSONObject quiz = quizzes.getJSONObject(i);
-                if (category.equalsIgnoreCase(quiz.optString("category"))) {
+                if (backendCategory.equalsIgnoreCase(quiz.optString("title"))) {
                     quizId = quiz.optString("_id");
                     break;
                 }
@@ -177,7 +207,7 @@ public class QuizActivity extends AppCompatActivity {
                 return null;
             currentQuizId = quizId;
 
-            String quizResponse = getJsonFromUrl(BACKEND_BASE_URL + "/api/quizzes/" + quizId);
+            String quizResponse = getJsonFromUrl(BackendService.BASE_URL + "/api/quizzes/" + quizId);
             if (quizResponse == null)
                 return null;
 
@@ -187,9 +217,14 @@ public class QuizActivity extends AppCompatActivity {
                 return null;
 
             List<Question> questions = new ArrayList<>();
+            java.util.Set<String> seenTexts = new java.util.HashSet<>();
             for (int i = 0; i < questionsJson.length(); i++) {
                 JSONObject q = questionsJson.getJSONObject(i);
                 String questionText = q.optString("questionText");
+                if (questionText != null && !questionText.trim().isEmpty()) {
+                    if (seenTexts.contains(questionText.trim().toLowerCase())) continue;
+                    seenTexts.add(questionText.trim().toLowerCase());
+                }
                 JSONArray optionsJson = q.optJSONArray("options");
                 List<String> options = new ArrayList<>();
                 for (int j = 0; optionsJson != null && j < optionsJson.length(); j++) {
@@ -213,8 +248,11 @@ public class QuizActivity extends AppCompatActivity {
             }
 
             Collections.shuffle(questions);
-            return isLearnMode ? questions
-                    : (questions.size() > 20 ? new ArrayList<>(questions.subList(0, 20)) : questions);
+            if (isLearnMode) {
+                return questions.size() > 150 ? new ArrayList<>(questions.subList(0, 150)) : questions;
+            } else {
+                return questions.size() > 20 ? new ArrayList<>(questions.subList(0, 20)) : questions;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -315,6 +353,16 @@ public class QuizActivity extends AppCompatActivity {
         progressText
                 .setText(String.format(Locale.getDefault(), "%d/%d", currentQuestionIndex + 1, questionList.size()));
 
+        categoryTitleTop.setText(category + " Quiz");
+
+        if (currentQuestionIndex == questionList.size() - 1) {
+            nextBtn.setText("Submit Test");
+        } else {
+            nextBtn.setText("Next Question");
+        }
+
+        scoreText.setText("Score: " + sessionScore);
+
         adapter = new OptionAdapter(q, index -> {
             q.setUserSelectedAnswerIndex(index);
             adapter.setSelection(index);
@@ -325,7 +373,7 @@ public class QuizActivity extends AppCompatActivity {
 
         adapter.setLearnMode(isLearnMode);
         adapter.setSelection(q.getUserSelectedAnswerIndex());
-        if (isLearnMode && q.getUserSelectedAnswerIndex() != -1) {
+        if (isLearnMode) {
             adapter.showResult(q.getCorrectAnswerIndex());
         }
 
@@ -335,7 +383,12 @@ public class QuizActivity extends AppCompatActivity {
     private void startTimer() {
         if (countDownTimer != null)
             countDownTimer.cancel();
-        countDownTimer = new CountDownTimer(30000, 1000) {
+        
+        long duration = 30000; // Default Easy
+        if ("Medium".equalsIgnoreCase(difficulty)) duration = 25000;
+        else if ("Hard".equalsIgnoreCase(difficulty)) duration = 20000;
+
+        countDownTimer = new CountDownTimer(duration, 1000) {
             @Override
             public void onTick(long ms) {
                 timerText.setText(String.format(Locale.getDefault(), "00:%02d", ms / 1000));
@@ -343,12 +396,36 @@ public class QuizActivity extends AppCompatActivity {
 
             @Override
             public void onFinish() {
-                handleNextClick();
+                handleNextClick(true);
             }
         }.start();
     }
 
-    private void handleNextClick() {
+    private void handleNextClick(boolean isAutoSkip) {
+        if (!isLearnMode) {
+            Question currentQ = questionList.get(currentQuestionIndex);
+            int selectedIndex = currentQ.getUserSelectedAnswerIndex();
+            
+            if (selectedIndex == -1 && !isAutoSkip) {
+                Toast.makeText(this, "Please select an answer to continue.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Score calculation: If auto-skipped, treat as wrong/skipped (0 marks usually, but negative in hard mode)
+            if (selectedIndex != -1) {
+                if (selectedIndex == currentQ.getCorrectAnswerIndex()) {
+                    sessionScore += 1;
+                } else {
+                    if ("Hard".equalsIgnoreCase(difficulty)) sessionScore -= 1;
+                }
+            } else if (isAutoSkip) {
+                // Penalize for skipping in Hard mode if desired, otherwise +0
+                if ("Hard".equalsIgnoreCase(difficulty)) sessionScore -= 1; 
+            }
+            
+            scoreText.setText("Score: " + sessionScore);
+        }
+
         if (currentQuestionIndex < questionList.size() - 1) {
             currentQuestionIndex++;
             displayQuestion();
@@ -382,11 +459,8 @@ public class QuizActivity extends AppCompatActivity {
             return;
         }
 
-        int score = 0;
-        for (Question q : questionList) {
-            if (q.getUserSelectedAnswerIndex() == q.getCorrectAnswerIndex())
-                score++;
-        }
+        int score = sessionScore;
+        // Logic updated to use real-time sessionScore which handles negative marking.
 
         prefManager.addStats(score);
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
@@ -432,6 +506,23 @@ public class QuizActivity extends AppCompatActivity {
         super.onPause();
         if (!isQuizFinished && !isLearnMode)
             finishQuiz();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (!isQuizFinished && !isLearnMode) {
+            Toast.makeText(this, "App backgrounded - Quiz submitted.", Toast.LENGTH_SHORT).show();
+            finishQuiz();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            enableFullscreen();
+        }
     }
 
     private void enableFullscreen() {

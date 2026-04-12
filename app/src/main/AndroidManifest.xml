@@ -15,6 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QuizApp"
         android:resizeableActivity="false"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
         
         <activity
