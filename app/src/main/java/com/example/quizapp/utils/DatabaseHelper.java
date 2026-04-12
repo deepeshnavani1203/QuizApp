@@ -76,4 +76,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return results;
     }
+
+    public void clearHistory() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_HISTORY, null, null);
+        db.close();
+    }
 }

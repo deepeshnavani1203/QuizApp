@@ -2,20 +2,27 @@ package com.example.quizapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
-import android.widget.RadioGroup;
+import android.view.View;
+import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.quizapp.ui.profile.ProfileActivity;
 import com.example.quizapp.ui.quiz.QuizActivity;
+import com.example.quizapp.ui.topic.CategoryAdapter;
 import com.example.quizapp.utils.SharedPreferencesManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RadioGroup categoryGroup, modeGroup;
-    private Button startQuizBtn;
+    private RecyclerView categoryRecyclerView;
     private BottomNavigationView bottomNavigation;
     private SharedPreferencesManager prefManager;
+    private TextView userNameText, subtitleText;
+    private boolean isLearnModeActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,47 +30,76 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         prefManager = new SharedPreferencesManager(this);
-        categoryGroup = findViewById(R.id.categoryGroup);
-        modeGroup = findViewById(R.id.modeGroup);
-        startQuizBtn = findViewById(R.id.startQuizBtn);
+        userNameText = findViewById(R.id.userNameText);
+        subtitleText = findViewById(R.id.welcomeText);
+        
+        userNameText.setText("Ready, " + prefManager.getUserName() + "?");
+
+        categoryRecyclerView = findViewById(R.id.categoryRecyclerView);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
-        startQuizBtn.setOnClickListener(v -> {
-            String category = getSelectedCategory();
-            boolean isLearnMode = modeGroup.getCheckedRadioButtonId() == R.id.modeLearn;
-            String difficulty = getSelectedDifficulty();
+        // Handle navigation from Profile
+        int targetTab = getIntent().getIntExtra("TARGET_TAB", R.id.nav_test);
+        bottomNavigation.setSelectedItemId(targetTab);
+        isLearnModeActive = (targetTab == R.id.nav_learn);
+        setupCategories(isLearnModeActive);
 
-            Intent intent = new Intent(this, QuizActivity.class);
-            intent.putExtra("CATEGORY", category);
-            intent.putExtra("LEARN_MODE", isLearnMode);
-            intent.putExtra("DIFFICULTY", difficulty);
-            startActivity(intent);
+        setupNavigation();
+    }
+
+    private void setupCategories(boolean isLearnMode) {
+        this.isLearnModeActive = isLearnMode;
+        subtitleText.setText(isLearnMode ? "Master your skills - All Questions" : "Challenge yourself - 20 Questions");
+        
+        List<String> categories = Arrays.asList(
+            "Java", "C++", "Python", "JS", "Git", "OS", "React", "Node.js", "DBMS", "Networks", "C"
+        );
+
+        CategoryAdapter adapter = new CategoryAdapter(categories, topic -> {
+            if (isLearnMode) {
+                startQuiz(topic, "Random", true);
+            } else {
+                showDifficultyDialog(topic);
+            }
         });
 
-        bottomNavigation.setSelectedItemId(R.id.nav_quiz);
+        categoryRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        categoryRecyclerView.setAdapter(adapter);
+    }
+
+    private void showDifficultyDialog(String topic) {
+        String[] difficulties = {"Easy", "Medium", "Hard", "Mix (Random)"};
+        new AlertDialog.Builder(this)
+                .setTitle("Select Difficulty for " + topic)
+                .setItems(difficulties, (dialog, which) -> {
+                    String diff = (which == 3) ? "Random" : difficulties[which];
+                    startQuiz(topic, diff, false);
+                })
+                .show();
+    }
+
+    private void startQuiz(String topic, String diff, boolean learnMode) {
+        Intent intent = new Intent(this, QuizActivity.class);
+        intent.putExtra("CATEGORY", topic);
+        intent.putExtra("DIFFICULTY", diff);
+        intent.putExtra("LEARN_MODE", learnMode);
+        startActivity(intent);
+    }
+
+    private void setupNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
+            if (id == R.id.nav_test) {
+                setupCategories(false);
                 return true;
+            } else if (id == R.id.nav_learn) {
+                setupCategories(true);
+                return true;
+            } else if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, ProfileActivity.class));
+                return false;
             }
-            return id == R.id.nav_quiz;
+            return false;
         });
-    }
-
-    private String getSelectedCategory() {
-        int id = categoryGroup.getCheckedRadioButtonId();
-        if (id == R.id.catJava) return "Java";
-        if (id == R.id.catDBMS) return "DBMS";
-        if (id == R.id.catOS) return "OS";
-        return "Java";
-    }
-
-    private String getSelectedDifficulty() {
-        // Since all diff buttons are in a GridLayout, I'll check manually
-        if (findViewById(R.id.diffEasy).isClickable() && ((android.widget.RadioButton)findViewById(R.id.diffEasy)).isChecked()) return "Easy";
-        if (findViewById(R.id.diffMedium).isClickable() && ((android.widget.RadioButton)findViewById(R.id.diffMedium)).isChecked()) return "Medium";
-        if (findViewById(R.id.diffHard).isClickable() && ((android.widget.RadioButton)findViewById(R.id.diffHard)).isChecked()) return "Hard";
-        return "Random";
     }
 }

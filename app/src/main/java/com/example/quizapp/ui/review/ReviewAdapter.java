@@ -34,7 +34,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
         int selected = q.getUserSelectedAnswerIndex();
         int correct = q.getCorrectAnswerIndex();
         
-        String selectedText = selected != -1 ? q.getOptions().get(selected) : "No answer";
+        String selectedText = selected != -1 ? q.getOptions().get(selected) : "No answer (Timeout)";
         holder.selectedAnswer.setText("Your Answer: " + selectedText);
         holder.correctAnswer.setText("Correct Answer: " + q.getOptions().get(correct));
         

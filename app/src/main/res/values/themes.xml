@@ -1,9 +1,26 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.QuizApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">#6200EE</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#EADDFF</item>
+        <item name="colorOnPrimaryContainer">#21005D</item>
+
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">#03DAC6</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSecondaryContainer">#CFE4FF</item>
+        <item name="colorOnSecondaryContainer">#001D36</item>
+
+        <!-- Background/Surface -->
+        <item name="android:statusBarColor">#6200EE</item>
+        <item name="android:windowBackground">#FBFDFF</item>
     </style>
 
     <style name="Theme.QuizApp" parent="Base.Theme.QuizApp" />
+
+    <style name="CircleImage" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

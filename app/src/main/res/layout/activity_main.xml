@@ -1,149 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA">
+    android:background="#FBFDFF">
 
-    <ScrollView
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottomNavigation"
-        android:padding="16dp">
+        android:layout_height="wrap_content"
+        android:background="#FBFDFF"
+        app:elevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="24dp">
 
             <TextView
+                android:id="@+id/welcomeText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Choose Category"
-                android:textColor="@color/black"
-                android:textSize="22sp"
+                android:text="Welcome Back,"
+                android:textColor="#757575"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/userNameText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Guest User"
+                android:textColor="#6200EE"
+                android:textSize="28sp"
                 android:textStyle="bold" />
+        </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <RadioGroup
-                android:id="@+id/categoryGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="80dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-                <RadioButton
-                    android:id="@+id/catJava"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:checked="true"
-                    android:text="Java" />
-
-                <RadioButton
-                    android:id="@+id/catDBMS"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="DBMS" />
-
-                <RadioButton
-                    android:id="@+id/catOS"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="OS" />
-            </RadioGroup>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Select Mode"
-                android:textColor="@color/black"
+                android:text="Categories"
+                android:textColor="#212121"
                 android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"
+                android:layout_marginStart="8dp"/>
 
-            <RadioGroup
-                android:id="@+id/modeGroup"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/categoryRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <RadioButton
-                    android:id="@+id/modeTest"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="Test Mode" />
-
-                <RadioButton
-                    android:id="@+id/modeLearn"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Learn / Review Mode" />
-            </RadioGroup>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Set Difficulty"
-                android:textColor="@color/black"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <GridLayout
-                android:id="@+id/difficultyGrid"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:columnCount="2">
-
-                <RadioButton
-                    android:id="@+id/diffEasy"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="Easy (20 Q)" />
-
-                <RadioButton
-                    android:id="@+id/diffMedium"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Medium (20 Q)" />
-
-                <RadioButton
-                    android:id="@+id/diffHard"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hard (20 Q)" />
-
-                <RadioButton
-                    android:id="@+id/diffRandom"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Random (20 Q)" />
-            </GridLayout>
-
-            <Button
-                android:id="@+id/startQuizBtn"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:layout_marginTop="40dp"
-                android:text="Start Quiz"
-                android:textAllCaps="false"
-                android:textSize="18sp"
-                app:cornerRadius="12dp" />
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@color/white"
+        android:layout_gravity="bottom"
+        android:background="#FFFFFF"
+        app:elevation="16dp"
         app:menu="@menu/bottom_nav_menu" />
 
-</RelativeLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

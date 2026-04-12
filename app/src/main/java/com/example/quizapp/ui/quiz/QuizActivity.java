@@ -5,12 +5,12 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.quizapp.R;
 import com.example.quizapp.models.Question;
 import com.example.quizapp.models.QuizResult;
@@ -21,7 +21,6 @@ import com.example.quizapp.utils.SecurityHelper;
 import com.example.quizapp.utils.SharedPreferencesManager;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -29,18 +28,21 @@ import java.util.Locale;
 public class QuizActivity extends AppCompatActivity {
 
     private TextView timerText, questionText, progressText;
-    private RadioGroup optionsGroup;
-    private RadioButton[] options = new RadioButton[4];
-    private Button nextBtn;
+    private RecyclerView optionsRecyclerView;
+    private Button nextBtn, prevBtn;
 
     private List<Question> questionList;
     private int currentQuestionIndex = 0;
     private int score = 0;
     private String category, difficulty;
-    private boolean isLearnMode;
+    private boolean isLearnMode, isRetryMode;
+    
     private CountDownTimer countDownTimer;
+    private long timeLeftInMillis = 30000;
     private boolean isQuizFinished = false;
-    private long timeLeftInMillis = 1800000; // 30 minutes
+    private int selectedOptionIndex = -1;
+    private OptionAdapter adapter;
+    private SharedPreferencesManager prefManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,44 +52,58 @@ public class QuizActivity extends AppCompatActivity {
         setContentView(R.layout.activity_quiz);
         enableFullscreen();
 
+        prefManager = new SharedPreferencesManager(this);
         timerText = findViewById(R.id.timerText);
         questionText = findViewById(R.id.questionText);
         progressText = findViewById(R.id.progressText);
-        optionsGroup = findViewById(R.id.optionsGroup);
-        options[0] = findViewById(R.id.option1);
-        options[1] = findViewById(R.id.option2);
-        options[2] = findViewById(R.id.option3);
-        options[3] = findViewById(R.id.option4);
+        optionsRecyclerView = findViewById(R.id.optionsRecyclerView);
         nextBtn = findViewById(R.id.nextBtn);
+        prevBtn = findViewById(R.id.prevBtn);
 
         category = getIntent().getStringExtra("CATEGORY");
-        isLearnMode = getIntent().getBooleanExtra("LEARN_MODE", false);
         difficulty = getIntent().getStringExtra("DIFFICULTY");
-
-        if (getIntent().hasExtra("QUESTIONS")) {
-            questionList = (ArrayList<Question>) getIntent().getSerializableExtra("QUESTIONS");
-            displayQuestion();
+        isLearnMode = getIntent().getBooleanExtra("LEARN_MODE", false);
+        
+        ArrayList<Question> passedQuestions = (ArrayList<Question>) getIntent().getSerializableExtra("QUESTIONS");
+        if (passedQuestions != null) {
+            isRetryMode = true;
+            questionList = passedQuestions;
+            for (Question q : questionList) q.setUserSelectedAnswerIndex(-1);
         } else {
+            isRetryMode = false;
             loadQuestions();
         }
-        
-        startTimer();
 
-        nextBtn.setOnClickListener(v -> processNext());
+        if (isLearnMode) {
+            prevBtn.setVisibility(View.VISIBLE);
+            timerText.setVisibility(View.INVISIBLE); // Learn mode usually doesn't have timer
+        } else {
+            Toast.makeText(this, "Test Mode: You cannot go back to previous questions!", Toast.LENGTH_LONG).show();
+        }
+
+        setupOptionsList();
+        displayQuestion();
         
+        nextBtn.setOnClickListener(v -> handleNextClick());
+        prevBtn.setOnClickListener(v -> handlePrevClick());
         SecurityHelper.enableDnd(this, true);
     }
 
     private void loadQuestions() {
-        questionList = QuizData.getQuestionsByTopic(category);
-        Collections.shuffle(questionList);
-        
-        // Limit to 20 questions as requested
-        if (questionList.size() > 20) {
+        questionList = QuizData.getQuestions(category, difficulty);
+        // Test mode is exactly 20. Learn mode can be much more.
+        if (!isLearnMode && questionList.size() > 20) {
             questionList = new ArrayList<>(questionList.subList(0, 20));
         }
         
-        displayQuestion();
+        if (questionList.isEmpty()) {
+            Toast.makeText(this, "Questions unavailable", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+    }
+
+    private void setupOptionsList() {
+        optionsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 
     private void displayQuestion() {
@@ -95,62 +111,71 @@ public class QuizActivity extends AppCompatActivity {
             Question q = questionList.get(currentQuestionIndex);
             questionText.setText(q.getQuestionText());
             
-            List<String> optList = q.getOptions();
-            for (int i = 0; i < 4; i++) {
-                options[i].setText(optList.get(i));
-                options[i].setEnabled(true);
-                options[i].setBackgroundResource(R.drawable.option_background_selector);
-            }
+            // Restore selection if exists (important for Learn mode Prev button)
+            selectedOptionIndex = q.getUserSelectedAnswerIndex();
             
-            optionsGroup.clearCheck();
-            progressText.setText(String.format(Locale.getDefault(), "Q %d/%d", currentQuestionIndex + 1, questionList.size()));
+            adapter = new OptionAdapter(q.getOptions(), index -> {
+                selectedOptionIndex = index;
+                q.setUserSelectedAnswerIndex(index);
+                adapter.setSelection(index);
+                
+                if (isLearnMode) {
+                    adapter.showResult(q.getCorrectAnswerIndex());
+                    nextBtn.setText(currentQuestionIndex == questionList.size() - 1 ? "Finish" : "Continue");
+                }
+            });
+            optionsRecyclerView.setAdapter(adapter);
+            
+            // Re-apply selection in UI if restoring
+            if (selectedOptionIndex != -1) {
+                adapter.setSelection(selectedOptionIndex);
+                if (isLearnMode) adapter.showResult(q.getCorrectAnswerIndex());
+            }
+
+            progressText.setText(String.format(Locale.getDefault(), "%d/%d", currentQuestionIndex + 1, questionList.size()));
+            if (!isLearnMode) startTimer();
         } else {
             finishQuiz();
         }
     }
 
-    private void processNext() {
-        int selectedId = optionsGroup.getCheckedRadioButtonId();
-        if (selectedId == -1) {
-            Toast.makeText(this, "Please select an answer", Toast.LENGTH_SHORT).show();
+    private void startTimer() {
+        if (countDownTimer != null) countDownTimer.cancel();
+        timeLeftInMillis = 30000;
+        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
+            @Override
+            public void onTick(long ms) {
+                timeLeftInMillis = ms;
+                timerText.setText(String.format(Locale.getDefault(), "00:%02d", ms / 1000));
+            }
+            @Override
+            public void onFinish() {
+                moveToNext();
+            }
+        }.start();
+    }
+
+    private void handleNextClick() {
+        Question q = questionList.get(currentQuestionIndex);
+        if (selectedOptionIndex == -1 && !isLearnMode) {
+            Toast.makeText(this, "Select an option first", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        RadioButton selectedButton = findViewById(selectedId);
-        int answerIndex = optionsGroup.indexOfChild(selectedButton);
-        Question currentQuestion = questionList.get(currentQuestionIndex);
-        currentQuestion.setUserSelectedAnswerIndex(answerIndex);
-
-        if (isLearnMode) {
-            highlightCorrectAnswer();
-            nextBtn.setText("Continue");
-            nextBtn.setOnClickListener(v -> {
-                moveToNext();
-                nextBtn.setText("Next Question");
-                nextBtn.setOnClickListener(v1 -> processNext());
-            });
-        } else {
-            if (answerIndex == currentQuestion.getCorrectAnswerIndex()) {
-                score++;
-            }
+        if (isLearnMode && nextBtn.getText().equals("Continue")) {
+            nextBtn.setText("Next Question");
+            moveToNext();
+        } else if (isLearnMode && nextBtn.getText().equals("Finish")) {
+            finishQuiz();
+        } else if (!isLearnMode) {
             moveToNext();
         }
     }
 
-    private void highlightCorrectAnswer() {
-        Question q = questionList.get(currentQuestionIndex);
-        int correctIndex = q.getCorrectAnswerIndex();
-        int selectedIndex = q.getUserSelectedAnswerIndex();
-
-        for (int i = 0; i < 4; i++) {
-            options[i].setEnabled(false);
-            if (i == correctIndex) {
-                options[i].setBackgroundColor(android.graphics.Color.YELLOW);
-            }
-        }
-        
-        if (selectedIndex == correctIndex) {
-            score++;
+    private void handlePrevClick() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            displayQuestion();
         }
     }
 
@@ -163,23 +188,6 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
-    private void startTimer() {
-        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                timeLeftInMillis = millisUntilFinished;
-                int minutes = (int) (timeLeftInMillis / 1000) / 60;
-                int seconds = (int) (timeLeftInMillis / 1000) % 60;
-                timerText.setText(String.format(Locale.getDefault(), "Time: %02d:%02d", minutes, seconds));
-            }
-
-            @Override
-            public void onFinish() {
-                autoSubmit("Time's up!");
-            }
-        }.start();
-    }
-
     private void finishQuiz() {
         if (isQuizFinished) return;
         isQuizFinished = true;
@@ -187,10 +195,19 @@ public class QuizActivity extends AppCompatActivity {
         if (countDownTimer != null) countDownTimer.cancel();
         SecurityHelper.enableDnd(this, false);
 
-        // Save result locally
-        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
-        QuizResult result = new QuizResult(category + " (" + difficulty + ")", score, questionList.size(), date);
-        new DatabaseHelper(this).addResult(result);
+        score = 0;
+        for (Question q : questionList) {
+            if (q.getUserSelectedAnswerIndex() == q.getCorrectAnswerIndex()) score++;
+        }
+
+        // Cumulative Stats Update
+        if (!isRetryMode) {
+            prefManager.addStats(score);
+            String date = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
+            String modeStr = isLearnMode ? "Learn" : "Test";
+            QuizResult result = new QuizResult(category + " (" + modeStr + ")", score, questionList.size(), date);
+            new DatabaseHelper(this).addResult(result);
+        }
 
         Intent intent = new Intent(this, ResultActivity.class);
         intent.putExtra("SCORE", score);
@@ -201,18 +218,11 @@ public class QuizActivity extends AppCompatActivity {
         finish();
     }
 
-    private void autoSubmit(String reason) {
-        if (!isQuizFinished) {
-            Toast.makeText(this, reason, Toast.LENGTH_LONG).show();
-            finishQuiz();
-        }
-    }
-
     @Override
     public void onBackPressed() {
         new AlertDialog.Builder(this)
-                .setTitle("Exit Quiz")
-                .setMessage("If you exit, your quiz will be submitted. Continue?")
+                .setTitle("Submit Quiz?")
+                .setMessage("Your progress will be submitted. Do you want to exit?")
                 .setPositiveButton("YES", (dialog, which) -> finishQuiz())
                 .setNegativeButton("NO", null)
                 .show();
@@ -221,17 +231,7 @@ public class QuizActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (!isQuizFinished) {
-            autoSubmit("Quiz auto-submitted: App minimized");
-        }
-    }
-
-    @Override
-    public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {
-        super.onMultiWindowModeChanged(isInMultiWindowMode);
-        if (isInMultiWindowMode && !isQuizFinished) {
-            autoSubmit("Quiz terminated: Split-screen detected");
-        }
+        if (!isQuizFinished) finishQuiz();
     }
 
     private void enableFullscreen() {

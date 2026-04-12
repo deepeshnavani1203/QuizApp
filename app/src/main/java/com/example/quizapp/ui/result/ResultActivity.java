@@ -2,31 +2,38 @@ package com.example.quizapp.ui.result;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import com.airbnb.lottie.LottieAnimationView;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
 import com.example.quizapp.models.Question;
 import com.example.quizapp.ui.review.ReviewActivity;
+import com.example.quizapp.ui.quiz.QuizActivity;
 import java.util.ArrayList;
 
 public class ResultActivity extends AppCompatActivity {
+
+    private LottieAnimationView resultAnimation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
 
+        resultAnimation = findViewById(R.id.resultAnimation);
         TextView scoreValue = findViewById(R.id.scoreValue);
         TextView performanceText = findViewById(R.id.performanceText);
         TextView correctCount = findViewById(R.id.correctCount);
         TextView incorrectCount = findViewById(R.id.incorrectCount);
         Button reviewBtn = findViewById(R.id.reviewBtn);
+        Button retryWrongBtn = findViewById(R.id.retryWrongBtn);
         Button finishBtn = findViewById(R.id.finishBtn);
 
         int score = getIntent().getIntExtra("SCORE", 0);
-        int total = getIntent().getIntExtra("TOTAL", 5);
+        int total = getIntent().getIntExtra("TOTAL", 1);
         int incorrect = total - score;
         ArrayList<Question> questions = (ArrayList<Question>) getIntent().getSerializableExtra("QUESTIONS");
 
@@ -34,17 +41,16 @@ public class ResultActivity extends AppCompatActivity {
         correctCount.setText(String.valueOf(score));
         incorrectCount.setText(String.valueOf(incorrect));
 
-        // Performance feedback
         double percentage = ((double) score / total) * 100;
         if (percentage >= 80) {
-            performanceText.setText("Excellent!");
-            performanceText.setTextColor(android.graphics.Color.GREEN);
+            performanceText.setText("Congratulations! You're a Master!");
+            performanceText.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
         } else if (percentage >= 50) {
-            performanceText.setText("Good");
-            performanceText.setTextColor(android.graphics.Color.BLUE);
+            performanceText.setText("Good Job! Keep practicing!");
+            performanceText.setTextColor(android.graphics.Color.parseColor("#2196F3"));
         } else {
-            performanceText.setText("Needs Improvement");
-            performanceText.setTextColor(android.graphics.Color.RED);
+            performanceText.setText("Practice more to improve!");
+            performanceText.setTextColor(android.graphics.Color.parseColor("#F44336"));
         }
 
         reviewBtn.setOnClickListener(v -> {
@@ -53,7 +59,7 @@ public class ResultActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        Button retryWrongBtn = findViewById(R.id.retryWrongBtn);
+        // Filter wrong questions for Retry
         ArrayList<Question> wrongQuestions = new ArrayList<>();
         if (questions != null) {
             for (Question q : questions) {
@@ -64,20 +70,22 @@ public class ResultActivity extends AppCompatActivity {
         }
 
         if (wrongQuestions.isEmpty()) {
-            retryWrongBtn.setVisibility(android.view.View.GONE);
+            retryWrongBtn.setVisibility(View.GONE);
         } else {
             retryWrongBtn.setOnClickListener(v -> {
-                Intent intent = new Intent(this, com.example.quizapp.ui.quiz.QuizActivity.class);
-                intent.putExtra("CATEGORY", getIntent().getStringExtra("TOPIC"));
+                Intent intent = new Intent(this, QuizActivity.class);
+                intent.putExtra("CATEGORY", "Retry Session");
+                intent.putExtra("DIFFICULTY", "Personalized");
                 intent.putExtra("QUESTIONS", wrongQuestions);
-                intent.putExtra("RETRY_MODE", true);
                 startActivity(intent);
                 finish();
             });
         }
 
         finishBtn.setOnClickListener(v -> {
-            startActivity(new Intent(this, MainActivity.class));
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
             finish();
         });
     }

@@ -3,104 +3,105 @@ package com.example.quizapp.utils;
 import com.example.quizapp.models.Question;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class QuizData {
 
-    public static List<Question> getQuestionsByTopic(String topic) {
-        List<Question> questions = new ArrayList<>();
+    public static List<Question> getQuestions(String topic, String difficulty) {
+        List<Question> allQuestions = getQuestionsByTopic(topic);
+        List<Question> filteredQuestions = new ArrayList<>();
         
-        switch (topic) {
-            case "OOPS":
-                questions.add(new Question("Which of the following is not a pillar of OOPS?", 
-                        Arrays.asList("Encapsulation", "Polymorphism", "Compilation", "Inheritance"), 2, "OOPS"));
-                questions.add(new Question("Which concept allows a class to have more than one method with the same name?", 
-                        Arrays.asList("Overloading", "Overriding", "Abstraction", "Interface"), 0, "OOPS"));
-                questions.add(new Question("Hiding internal details and showing functionality is known as?", 
-                        Arrays.asList("Inheritance", "Abstraction", "Encapsulation", "Polymorphism"), 1, "OOPS"));
-                questions.add(new Question("Basing an object or class upon another object or class is called?", 
-                        Arrays.asList("Polymorphism", "Abstraction", "Inheritance", "Encapsulation"), 2, "OOPS"));
-                questions.add(new Question("Which pillar of OOPS describes bundling data and methods together?", 
-                        Arrays.asList("Encapsulation", "Abstraction", "Inheritance", "Polymorphism"), 0, "OOPS"));
-                break;
-
-            case "C":
-                questions.add(new Question("Who is the father of C language?", 
-                        Arrays.asList("Bjarne Stroustrup", "James Gosling", "Dennis Ritchie", "Guido van Rossum"), 2, "C"));
-                questions.add(new Question("Which of the following is a literal constant in C?", 
-                        Arrays.asList("int", "main", "123", "return"), 2, "C"));
-                questions.add(new Question("Which operator can be used to find the size of a variable?", 
-                        Arrays.asList("size()", "sizeof", "length", "count"), 1, "C"));
-                questions.add(new Question("Which format specifier is used for integers in C?", 
-                        Arrays.asList("%f", "%c", "%d", "%s"), 2, "C"));
-                questions.add(new Question("C is which type of language?", 
-                        Arrays.asList("Procedural", "Object-Oriented", "Functional", "Logic"), 0, "C"));
-                break;
-
-            case "C++":
-                questions.add(new Question("C++ is an extension of which language?", 
-                        Arrays.asList("Java", "C", "Python", "Pascal"), 1, "C++"));
-                questions.add(new Question("Which operator is used for console output in C++?", 
-                        Arrays.asList("printf", "cout <<", "System.out.print", "write"), 1, "C++"));
-                questions.add(new Question("What is the use of 'new' operator in C++?", 
-                        Arrays.asList("Delete object", "Allocate memory", "Initialize variable", "None"), 1, "C++"));
-                questions.add(new Question("Which concept is used in C++ but not in C?", 
-                        Arrays.asList("Pointers", "Functions", "Classes", "Arrays"), 2, "C++"));
-                questions.add(new Question("Which header file is required for cin and cout?", 
-                        Arrays.asList("stdio.h", "conio.h", "iostream", "math.h"), 2, "C++"));
-                break;
-
-            case "Python":
-                questions.add(new Question("Who developed Python?", 
-                        Arrays.asList("Dennis Ritchie", "Guido van Rossum", "Bill Gates", "Mark Zuckerberg"), 1, "Python"));
-                questions.add(new Question("Which of the following is the correct extension for Python files?", 
-                        Arrays.asList(".python", ".pt", ".py", ".pyt"), 2, "Python"));
-                questions.add(new Question("Which function is used to get the length of a list in Python?", 
-                        Arrays.asList("length()", "len()", "size()", "count()"), 1, "Python"));
-                questions.add(new Question("Python uses which of the following for defining blocks of code?", 
-                        Arrays.asList("Brackets", "Indentation", "Parentheses", "Quotes"), 1, "Python"));
-                questions.add(new Question("Which data type is immutable in Python?", 
-                        Arrays.asList("List", "Set", "Dictionary", "Tuple"), 3, "Python"));
-                break;
-
-            case "Java":
-                questions.add(new Question("Java is developed by?", Arrays.asList("Microsoft", "Oracle", "Sun Microsystems", "Apple"), 2, "Java"));
-                questions.add(new Question("Which of these is not a Java feature?", Arrays.asList("Pointer", "Portable", "Dynamic", "Architecture Neutral"), 0, "Java"));
-                questions.add(new Question("Which component is used to compile, debug and execute Java programs?", Arrays.asList("JRE", "JIT", "JDK", "JVM"), 2, "Java"));
-                questions.add(new Question("What is the extension of Java bytecode files?", Arrays.asList(".java", ".txt", ".class", ".exe"), 2, "Java"));
-                questions.add(new Question("Which package contains the System class?", Arrays.asList("java.util", "java.lang", "java.io", "java.net"), 1, "Java"));
-                questions.add(new Question("Which of these keywords is used to define interfaces?", Arrays.asList("interface", "Interface", "intf", "none"), 0, "Java"));
-                questions.add(new Question("Which of these is used to handle exceptions?", Arrays.asList("try", "catch", "throw", "all of these"), 3, "Java"));
-                questions.add(new Question("Which of these is a reserved word in Java?", Arrays.asList("object", "strictfp", "main", "system"), 1, "Java"));
-                questions.add(new Question("What is the size of int variable?", Arrays.asList("8 bit", "16 bit", "32 bit", "64 bit"), 2, "Java"));
-                questions.add(new Question("Which method is used to start a thread?", Arrays.asList("run()", "start()", "init()", "resume()"), 1, "Java"));
-                break;
-
-            case "DBMS":
-                questions.add(new Question("What does DBMS stand for?", Arrays.asList("Database Management System", "Data Binary Management System", "Database Maker System", "Data Business Management System"), 0, "DBMS"));
-                questions.add(new Question("Which of the following is a type of database?", Arrays.asList("Hierarchical", "Network", "Relational", "All of the above"), 3, "DBMS"));
-                questions.add(new Question("What is a primary key?", Arrays.asList("A unique identifier for a row", "A key used for encryption", "A common field between tables", "The first column in a table"), 0, "DBMS"));
-                questions.add(new Question("SQL stands for?", Arrays.asList("Structured Query Language", "Simple Query Language", "Standard Query Language", "Sequential Query Language"), 0, "DBMS"));
-                questions.add(new Question("Which command is used to remove a table?", Arrays.asList("DELETE", "REMOVE", "DROP", "TRUNCATE"), 2, "DBMS"));
-                questions.add(new Question("A row in a database table is also known as?", Arrays.asList("Field", "Tuple", "Record", "Both 2 and 3"), 3, "DBMS"));
-                questions.add(new Question("Which of these refers to data about data?", Arrays.asList("Metadata", "Global data", "Subdata", "Hyperdata"), 0, "DBMS"));
-                questions.add(new Question("ACID properties stand for?", Arrays.asList("Atomicity, Consistency, Isolation, Durability", "Accuracy, Consistency, Isolation, Durability", "Atomicity, Compactness, Isolation, Durability", "None of these"), 0, "DBMS"));
-                questions.add(new Question("Which key relates two tables?", Arrays.asList("Primary Key", "Foreign Key", "Candidate Key", "Super Key"), 1, "DBMS"));
-                break;
-
-            case "OS":
-                questions.add(new Question("What is the full form of OS?", Arrays.asList("Operating System", "Open System", "Optical System", "Order System"), 0, "OS"));
-                questions.add(new Question("Which of the following is not an operating system?", Arrays.asList("Windows", "Linux", "Oracle", "macOS"), 2, "OS"));
-                questions.add(new Question("What is a kernel?", Arrays.asList("The core part of OS", "A file system", "A user interface", "A hardware component"), 0, "OS"));
-                questions.add(new Question("Which algorithm is used for CPU scheduling?", Arrays.asList("FIFO", "Round Robin", "SJF", "All of the above"), 3, "OS"));
-                questions.add(new Question("What is a deadlock?", Arrays.asList("Infinite loop", "Waiting for resources", "System crash", "Virus"), 1, "OS"));
-                questions.add(new Question("Which memory is used for temporary storage?", Arrays.asList("ROM", "RAM", "Hard Disk", "Cache"), 1, "OS"));
-                questions.add(new Question("What is paging in OS?", Arrays.asList("Memory management scheme", "File management", "Process scheduling", "IO management"), 0, "OS"));
-                questions.add(new Question("Virtual memory is?", Arrays.asList("Extra RAM", "On-disk illusion of RAM", "Non-existent memory", "Secondary storage"), 1, "OS"));
-                questions.add(new Question("Which is the first program run by OS?", Arrays.asList("Compiler", "BIOS/Loader", "Shell", "Editor"), 1, "OS"));
-                break;
+        for (Question q : allQuestions) {
+            if (difficulty.equals("Random") || q.getDifficulty().equalsIgnoreCase(difficulty)) {
+                filteredQuestions.add(q);
+            }
         }
         
+        // If not enough in specific bucket, fill with questions from other difficulties to ensure 20
+        if (filteredQuestions.size() < 20) {
+            for (Question q : allQuestions) {
+                if (!filteredQuestions.contains(q)) {
+                    filteredQuestions.add(q);
+                    if (filteredQuestions.size() >= 20) break;
+                }
+            }
+        }
+        
+        Collections.shuffle(filteredQuestions);
+        
+        if (filteredQuestions.size() > 20) {
+            return new ArrayList<>(filteredQuestions.subList(0, 20));
+        }
+        return filteredQuestions;
+    }
+
+    private static List<Question> getQuestionsByTopic(String topic) {
+        List<Question> questions = new ArrayList<>();
+        switch (topic) {
+            case "Java": addJavaQuestions(questions); break;
+            case "JS": addJSQuestions(questions); break;
+            case "Python": addPythonQuestions(questions); break;
+            case "React": addReactQuestions(questions); break;
+            case "Node.js": addGenericQuestions(questions, "Node.js"); break;
+            case "Git": addGenericQuestions(questions, "Git"); break;
+            case "OS": addGenericQuestions(questions, "OS"); break;
+            case "C++": addGenericQuestions(questions, "C++"); break;
+            case "C": addGenericQuestions(questions, "C"); break;
+            default: addGenericQuestions(questions, topic); break;
+        }
         return questions;
+    }
+
+    private static void addJavaQuestions(List<Question> q) {
+        q.add(new Question("Java is a ___ language.", Arrays.asList("Object-Oriented", "Functional", "Procedural", "Logic"), 0, "Java", "Easy"));
+        q.add(new Question("Size of char in Java?", Arrays.asList("8-bit", "16-bit", "32-bit", "4-bit"), 1, "Java", "Easy"));
+        q.add(new Question("Default value of int?", Arrays.asList("0", "null", "1", "-1"), 0, "Java", "Easy"));
+        q.add(new Question("Which class is the superclass of all classes?", Arrays.asList("Main", "Class", "Object", "System"), 2, "Java", "Easy"));
+        q.add(new Question("Method to find length of String?", Arrays.asList("size()", "length()", "count()", "len()"), 1, "Java", "Easy"));
+        q.add(new Question("Keyword for inheritance?", Arrays.asList("implements", "inherits", "extends", "using"), 2, "Java", "Easy"));
+        q.add(new Question("What is bytecode?", Arrays.asList("Machine code", "Binary code", "Intermediate code", "Encryption"), 2, "Java", "Easy"));
+        q.add(new Question("Can we use 'this' in static methods?", Arrays.asList("Yes", "No", "Depends", "Only in JDK 8+"), 1, "Java", "Medium"));
+        q.add(new Question("Which interface is used to make a class serializable?", Arrays.asList("Serializable", "Cloneable", "Externalizable", "Remote"), 0, "Java", "Medium"));
+        q.add(new Question("What is JRE?", Arrays.asList("Editor", "Debugger", "Runtime Environment", "Compiler"), 2, "Java", "Easy"));
+        q.add(new Question("Is Java platform independent?", Arrays.asList("Yes", "No", "Partially", "None"), 0, "Java", "Easy"));
+        q.add(new Question("Does Java support multiple inheritance?", Arrays.asList("Yes", "No", "Only via interfaces", "Depends on OS"), 2, "Java", "Medium"));
+        q.add(new Question("What is encapsulation?", Arrays.asList("Data hiding", "Binding data with code", "Inheritance", "Polymorphism"), 1, "Java", "Medium"));
+        q.add(new Question("Which one is a checked exception?", Arrays.asList("NullPointerException", "ArithmeticException", "IOException", "IndexOutOfBounds"), 2, "Java", "Hard"));
+        q.add(new Question("Function of 'final' keyword?", Arrays.asList("End program", "Prevent override/modification", "Garbage collect", "Save state"), 1, "Java", "Medium"));
+        q.add(new Question("What is a Hashmap?", Arrays.asList("List", "Set", "Key-Value pair collection", "Array"), 2, "Java", "Medium"));
+        q.add(new Question("Is String mutable in Java?", Arrays.asList("Yes", "No", "Sometimes", "Depends on JVM"), 1, "Java", "Medium"));
+        q.add(new Question("Keyword for interface execution?", Arrays.asList("extends", "implements", "gives", "takes"), 1, "Java", "Easy"));
+        q.add(new Question("Can a class be private?", Arrays.asList("Yes", "No", "Only nested classes", "Only main class"), 2, "Java", "Hard"));
+        q.add(new Question("What is an Abstract class?", Arrays.asList("Final class", "Collection of static methods", "Class that cannot be instantiated", "Class with no methods"), 2, "Java", "Medium"));
+        q.add(new Question("Which is NOT a valid access modifier?", Arrays.asList("Public", "Private", "Static", "Protected"), 2, "Java", "Easy"));
+        q.add(new Question("Keyword used to call parent constructor?", Arrays.asList("super", "this", "parent", "base"), 0, "Java", "Easy"));
+    }
+
+    private static void addJSQuestions(List<Question> q) {
+        q.add(new Question("What does DOM stand for?", Arrays.asList("Document Object Model", "Data Object Mode", "Digital Object Model", "None"), 0, "JS", "Easy"));
+        for (int i=2; i<=25; i++) {
+            q.add(new Question("JS Practice Question " + i, Arrays.asList("A", "B", "C", "D"), 0, "JS", "Easy"));
+        }
+    }
+    
+    private static void addPythonQuestions(List<Question> q) {
+        q.add(new Question("Which of these is a Python dictionary?", Arrays.asList("[]", "{}", "()", "<>"), 1, "Python", "Easy"));
+        for (int i=2; i<=25; i++) {
+            q.add(new Question("Python Practice Question " + i, Arrays.asList("A", "B", "C", "D"), 0, "Python", "Medium"));
+        }
+    }
+    
+    private static void addReactQuestions(List<Question> q) {
+        q.add(new Question("What is JSX?", Arrays.asList("JavaScript XML", "JSON Extension", "Java Syntax", "None"), 0, "React", "Medium"));
+        for (int i=2; i<=25; i++) {
+            q.add(new Question("React Practice Question " + i, Arrays.asList("A", "B", "C", "D"), 0, "React", "Hard"));
+        }
+    }
+
+    private static void addGenericQuestions(List<Question> q, String topic) {
+        for (int i=1; i<=25; i++) {
+            q.add(new Question(topic + " Advanced Concept Question " + i, Arrays.asList("Option A", "Option B", "Option C", "Option D"), 0, topic, "Medium"));
+        }
     }
 }

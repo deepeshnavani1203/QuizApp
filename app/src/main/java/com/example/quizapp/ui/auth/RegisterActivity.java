@@ -8,7 +8,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.quizapp.R;
-import com.example.quizapp.ui.LoginActivity;
+import com.example.quizapp.ui.auth.LoginActivity;
 import com.example.quizapp.utils.SharedPreferencesManager;
 
 public class RegisterActivity extends AppCompatActivity {
