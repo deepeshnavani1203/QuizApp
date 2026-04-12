@@ -6,24 +6,53 @@ import java.util.List;
 public class Question implements Serializable {
     private String questionText;
     private List<String> options;
-    private int correctAnswerIndex;
+    private int correctOptionIndex;
     private String topic;
-    private String difficulty; // Added: Easy, Medium, Hard
+    private String difficulty;
     private int userSelectedAnswerIndex = -1;
 
-    public Question(String questionText, List<String> options, int correctAnswerIndex, String topic, String difficulty) {
+    public Question(String questionText, List<String> options, int correctOptionIndex, String topic,
+            String difficulty) {
         this.questionText = questionText;
         this.options = options;
-        this.correctAnswerIndex = correctAnswerIndex;
+        this.correctOptionIndex = correctOptionIndex;
         this.topic = topic;
         this.difficulty = difficulty;
     }
 
-    public String getQuestionText() { return questionText; }
-    public List<String> getOptions() { return options; }
-    public int getCorrectAnswerIndex() { return correctAnswerIndex; }
-    public String getTopic() { return topic; }
-    public String getDifficulty() { return difficulty; }
-    public int getUserSelectedAnswerIndex() { return userSelectedAnswerIndex; }
-    public void setUserSelectedAnswerIndex(int index) { this.userSelectedAnswerIndex = index; }
+    public String getQuestionText() {
+        return questionText;
+    }
+
+    public List<String> getOptions() {
+        return options;
+    }
+
+    public int getCorrectOptionIndex() {
+        return correctOptionIndex;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public String getCorrectAnswer() {
+        return options.get(correctOptionIndex);
+    }
+
+    public int getCorrectAnswerIndex() {
+        return correctOptionIndex;
+    }
+
+    public int getUserSelectedAnswerIndex() {
+        return userSelectedAnswerIndex;
+    }
+
+    public void setUserSelectedAnswerIndex(int index) {
+        this.userSelectedAnswerIndex = index;
+    }
 }

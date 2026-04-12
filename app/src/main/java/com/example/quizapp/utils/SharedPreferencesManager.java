@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 public class SharedPreferencesManager {
     private static final String PREF_NAME = "QuizifyPrefs";
     private static final String KEY_LOGGED_IN = "isLoggedIn";
-    private static final String KEY_USER_NAME = "userName";
+    private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "userEmail";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_TOTAL_SCORE = "totalScore";
