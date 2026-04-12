@@ -61,13 +61,12 @@ public class QuestionBank {
                     "Python", "Easy"));
         }
 
-        // Generate up to 150
+        // Generate up to 150 placeholder questions with clean option labels
         int currentSize = list.size();
         for (int i = currentSize; i < 150; i++) {
-            String qText = topic + " Advanced Question " + (i + 1);
-            List<String> options = Arrays.asList("A) Concept " + (i * 2), "B) Concept " + (i * 2 + 1),
-                    "C) Concept " + (i * 2 + 2), "D) Concept " + (i * 2 + 3));
-            int correctIndex = 0; // Always first option for generated
+            String qText = topic + " Question " + (i + 1);
+            List<String> options = Arrays.asList("Option A", "Option B", "Option C", "Option D");
+            int correctIndex = i % 4; // rotate correct answer for variety
             String diff = (i % 3 == 0) ? "Hard" : (i % 2 == 0 ? "Medium" : "Easy");
 
             list.add(new Question(qText, options, correctIndex, topic, diff));

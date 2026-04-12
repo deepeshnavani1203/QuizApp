@@ -29,7 +29,6 @@ public class ResultActivity extends AppCompatActivity {
         TextView correctCount = findViewById(R.id.correctCount);
         TextView incorrectCount = findViewById(R.id.incorrectCount);
         Button reviewBtn = findViewById(R.id.reviewBtn);
-        Button retryWrongBtn = findViewById(R.id.retryWrongBtn);
         Button finishBtn = findViewById(R.id.finishBtn);
 
         int score = getIntent().getIntExtra("SCORE", 0);
@@ -58,29 +57,6 @@ public class ResultActivity extends AppCompatActivity {
             intent.putExtra("QUESTIONS", questions);
             startActivity(intent);
         });
-
-        // Filter wrong questions for Retry
-        ArrayList<Question> wrongQuestions = new ArrayList<>();
-        if (questions != null) {
-            for (Question q : questions) {
-                if (q.getUserSelectedAnswerIndex() != q.getCorrectAnswerIndex()) {
-                    wrongQuestions.add(q);
-                }
-            }
-        }
-
-        if (wrongQuestions.isEmpty()) {
-            retryWrongBtn.setVisibility(View.GONE);
-        } else {
-            retryWrongBtn.setOnClickListener(v -> {
-                Intent intent = new Intent(this, QuizActivity.class);
-                intent.putExtra("CATEGORY", "Retry Session");
-                intent.putExtra("DIFFICULTY", "Personalized");
-                intent.putExtra("QUESTIONS", wrongQuestions);
-                startActivity(intent);
-                finish();
-            });
-        }
 
         finishBtn.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);

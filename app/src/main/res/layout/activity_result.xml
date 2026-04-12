@@ -96,19 +96,10 @@
             </com.google.android.material.card.MaterialCardView>
 
             <Button
-                android:id="@+id/retryWrongBtn"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="32dp"
-                android:text="Retry Wrong Questions"
-                android:textAllCaps="false"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-            <Button
                 android:id="@+id/reviewBtn"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="32dp"
                 android:text="Review Answers"
                 android:textAllCaps="false"
                 style="@style/Widget.MaterialComponents.Button.TextButton" />

@@ -8,8 +8,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
+import com.example.quizapp.utils.BackendService;
 import com.example.quizapp.utils.SharedPreferencesManager;
 import com.google.android.material.textfield.TextInputEditText;
+import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -24,7 +26,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         prefManager = new SharedPreferencesManager(this);
-        
+
         // Redirect if already logged in
         if (prefManager.isLoggedIn()) {
             startActivity(new Intent(this, MainActivity.class));
@@ -45,14 +47,31 @@ public class LoginActivity extends AppCompatActivity {
                 return;
             }
 
-            if (prefManager.validateLogin(email, password)) {
-                prefManager.setLoggedIn(true);
-                Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
-            } else {
-                Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show();
-            }
+            new Thread(() -> {
+                try {
+                    JSONObject response = BackendService.login(email, password);
+                    if (response != null && response.has("user")) {
+                        JSONObject user = response.getJSONObject("user");
+                        String userId = user.optString("id");
+                        String name = user.optString("name");
+                        String userEmail = user.optString("email");
+                        prefManager.saveBackendUser(userId, name, userEmail);
+                        prefManager.setLoggedIn(true);
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(this, MainActivity.class));
+                            finish();
+                        });
+                    } else {
+                        runOnUiThread(() -> Toast
+                                .makeText(this, "Invalid credentials or server error", Toast.LENGTH_SHORT).show());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    runOnUiThread(() -> Toast.makeText(this, "Unable to login. Check your network.", Toast.LENGTH_SHORT)
+                            .show());
+                }
+            }).start();
         });
 
         registerLink.setOnClickListener(v -> {

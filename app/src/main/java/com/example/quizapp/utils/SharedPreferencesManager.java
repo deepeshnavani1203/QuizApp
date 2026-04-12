@@ -8,6 +8,7 @@ public class SharedPreferencesManager {
     private static final String KEY_LOGGED_IN = "isLoggedIn";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "userEmail";
+    private static final String KEY_USER_ID = "userId";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_TOTAL_SCORE = "totalScore";
     private static final String KEY_TOTAL_QUIZZES = "totalQuizzes";
@@ -36,10 +37,21 @@ public class SharedPreferencesManager {
         editor.apply();
     }
 
+    public void saveBackendUser(String userId, String name, String email) {
+        editor.putString(KEY_USER_ID, userId);
+        editor.putString(KEY_USER_NAME, name);
+        editor.putString(KEY_USER_EMAIL, email);
+        editor.apply();
+    }
+
     public boolean validateLogin(String email, String password) {
         String savedEmail = sharedPreferences.getString(KEY_USER_EMAIL, "");
         String savedPassword = sharedPreferences.getString(KEY_PASSWORD, "");
         return email.equals(savedEmail) && password.equals(savedPassword);
+    }
+
+    public String getUserId() {
+        return sharedPreferences.getString(KEY_USER_ID, null);
     }
 
     public String getUserName() {

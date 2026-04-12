@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
         prefManager = new SharedPreferencesManager(this);
         userNameText = findViewById(R.id.userNameText);
         subtitleText = findViewById(R.id.welcomeText);
-        
+
         userNameText.setText("Ready, " + prefManager.getUserName() + "?");
 
         categoryRecyclerView = findViewById(R.id.categoryRecyclerView);
@@ -50,10 +50,18 @@ public class MainActivity extends AppCompatActivity {
     private void setupCategories(boolean isLearnMode) {
         this.isLearnModeActive = isLearnMode;
         subtitleText.setText(isLearnMode ? "Master your skills - All Questions" : "Challenge yourself - 20 Questions");
-        
+
         List<String> categories = Arrays.asList(
-            "Java", "C++", "Python", "JS", "Git", "OS", "React", "Node.js", "DBMS", "Networks", "C"
-        );
+                "Java Basics",
+                "C Programming",
+                "C++ Basics",
+                "Python Basics",
+                "JavaScript Basics",
+                "Git Fundamentals",
+                "Operating Systems",
+                "ReactJS",
+                "Node.js",
+                "DBMS");
 
         CategoryAdapter adapter = new CategoryAdapter(categories, topic -> {
             if (isLearnMode) {
@@ -68,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showDifficultyDialog(String topic) {
-        String[] difficulties = {"Easy", "Medium", "Hard", "Mix (Random)"};
+        String[] difficulties = { "Easy", "Medium", "Hard", "Mix (Random)" };
         new AlertDialog.Builder(this)
                 .setTitle("Select Difficulty for " + topic)
                 .setItems(difficulties, (dialog, which) -> {
