@@ -58,6 +58,7 @@ public class QuizActivity extends AppCompatActivity {
     private int sessionScore = 0;
     private OptionAdapter adapter;
     private SharedPreferencesManager prefManager;
+    private long questionStartTime; // tracks when current question was displayed
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +99,7 @@ public class QuizActivity extends AppCompatActivity {
         nextBtn.setOnClickListener(v -> handleNextClick(false));
         prevBtn.setOnClickListener(v -> handlePrevClick());
 
-        SecurityHelper.enableDnd(this, true);
+        // DND is enabled after questions load, inside loadQuestions() callback
     }
 
     private void loadQuestions() {
@@ -108,7 +109,7 @@ public class QuizActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 skeletonLayout.setVisibility(View.GONE);
                 quizContentGroup.setVisibility(View.VISIBLE);
-                
+
                 if (fetched != null && !fetched.isEmpty()) {
                     questionList = fetched;
                     currentQuestionIndex = 0;
@@ -116,6 +117,8 @@ public class QuizActivity extends AppCompatActivity {
                     if (!isLearnMode) {
                         scoreText.setVisibility(View.VISIBLE);
                         startTimer();
+                        // Silently enable DND if permission was already granted
+                        SecurityHelper.enableDnd(this, true);
                     } else {
                         scoreText.setVisibility(View.GONE);
                     }
@@ -137,8 +140,10 @@ public class QuizActivity extends AppCompatActivity {
         Toast.makeText(this, "Using offline questions", Toast.LENGTH_SHORT).show();
         currentQuestionIndex = 0;
         displayQuestion();
-        if (!isLearnMode)
+        if (!isLearnMode) {
             startTimer();
+            SecurityHelper.enableDnd(this, true);
+        }
     }
 
     private String mapCategoryToLocal(String category) {
@@ -341,10 +346,12 @@ public class QuizActivity extends AppCompatActivity {
 
     private void displayQuestion() {
         if (currentQuestionIndex < 0 || currentQuestionIndex >= questionList.size()) {
-            // Error safety for index display
             Toast.makeText(this, "Question Load Error", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // Record when this question started being shown
+        questionStartTime = System.currentTimeMillis();
 
         Question q = questionList.get(currentQuestionIndex);
         questionText.setText(q.getQuestionText());
@@ -404,6 +411,10 @@ public class QuizActivity extends AppCompatActivity {
     private void handleNextClick(boolean isAutoSkip) {
         if (!isLearnMode) {
             Question currentQ = questionList.get(currentQuestionIndex);
+
+            // Record time spent on this question
+            currentQ.setTimeTakenMs(System.currentTimeMillis() - questionStartTime);
+
             int selectedIndex = currentQ.getUserSelectedAnswerIndex();
             
             if (selectedIndex == -1 && !isAutoSkip) {
@@ -474,6 +485,7 @@ public class QuizActivity extends AppCompatActivity {
         intent.putExtra("SCORE", score);
         intent.putExtra("TOTAL", questionList.size());
         intent.putExtra("TOPIC", category);
+        intent.putExtra("DIFFICULTY", difficulty);
         intent.putExtra("QUESTIONS", (ArrayList<Question>) questionList);
         startActivity(intent);
         finish();

@@ -14,25 +14,55 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:orientation="horizontal"
+            android:padding="24dp"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/welcomeText"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Welcome Back,"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="16sp" />
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/userNameText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Guest User"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/welcomeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome Back,"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/userNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guest User"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Notification Bell Icon -->
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/notifBtn"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Notifications"
+                android:src="@drawable/ic_notification"
+                android:tint="?attr/colorPrimary" />
+
+            <!-- Calendar Icon -->
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/calendarBtn"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Add to Calendar"
+                android:src="@drawable/ic_calendar"
+                android:tint="?attr/colorPrimary" />
+
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 

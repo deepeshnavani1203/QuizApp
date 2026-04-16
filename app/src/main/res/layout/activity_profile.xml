@@ -101,7 +101,7 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="20dp">
-                        <TextView android:id="@+id/avgScoreText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="85%" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/success"/>
+                        <TextView android:id="@+id/avgScoreText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0%" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/success"/>
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Avg Score" android:textSize="12sp" android:textColor="@color/text_secondary"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -123,10 +123,21 @@
                 android:nestedScrollingEnabled="false" />
 
             <Button
+                android:id="@+id/clearHistoryBtn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
+                android:text="Clear History"
+                android:textAllCaps="false"
+                android:textColor="@color/error"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="@color/error" />
+
+            <Button
                 android:id="@+id/logoutBtn"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="32dp"
                 android:text="Logout Session"
                 android:textAllCaps="false"

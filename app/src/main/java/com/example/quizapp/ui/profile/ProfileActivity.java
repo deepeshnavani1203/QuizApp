@@ -27,7 +27,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private RecyclerView historyRecyclerView;
     private TextView profileName, profileEmail, totalQuizzesText, avgScoreText;
-    private Button logoutBtn;
+    private Button logoutBtn, clearHistoryBtn;
     private BottomNavigationView bottomNavigation;
     private SharedPreferencesManager prefManager;
 
@@ -44,6 +44,7 @@ public class ProfileActivity extends AppCompatActivity {
         historyRecyclerView = findViewById(R.id.historyRecyclerView);
         bottomNavigation = findViewById(R.id.bottomNavigation);
         logoutBtn = findViewById(R.id.logoutBtn);
+        clearHistoryBtn = findViewById(R.id.clearHistoryBtn);
 
         profileName.setText(prefManager.getUserName());
         profileEmail.setText(prefManager.getUserEmail());
@@ -75,6 +76,15 @@ public class ProfileActivity extends AppCompatActivity {
             finishAffinity();
         });
 
+        clearHistoryBtn.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                .setTitle("Clear History")
+                .setMessage("This will permanently delete all your quiz history from the server. This cannot be undone.")
+                .setPositiveButton("Clear", (dialog, which) -> clearHistory())
+                .setNegativeButton("Cancel", null)
+                .show();
+        });
+
     }
 
     private void setupHistory() {
@@ -91,39 +101,45 @@ public class ProfileActivity extends AppCompatActivity {
             List<QuizResult> results = new ArrayList<>();
             int total = 0;
             double avg = 0;
+            boolean backendSuccess = false;
             try {
                 JSONArray history = BackendService.getUserHistory(userId);
                 if (history != null) {
-                    int sumScore = 0;
+                    backendSuccess = true;
+                    double sumPercent = 0;
                     for (int i = 0; i < history.length(); i++) {
                         JSONObject item = history.getJSONObject(i);
                         JSONObject quizObj = item.optJSONObject("quizId");
-                        String quizName = quizObj != null ? quizObj.optString("title", "Quiz") : "Quiz";
+                        String quizName = (quizObj != null && quizObj.has("title"))
+                                ? quizObj.optString("title", "Quiz") : "Quiz";
                         int score = item.optInt("score", 0);
                         int totalQuestions = item.optInt("totalQuestions", 0);
                         String date = item.optString("date", "");
                         results.add(new QuizResult(quizName, score, totalQuestions, date));
-                        sumScore += score;
+                        if (totalQuestions > 0) {
+                            sumPercent += (double) score / totalQuestions * 100;
+                        }
                     }
                     total = results.size();
-                    if (total > 0) {
-                        avg = Math.max(0.0, (double) sumScore / total);
-                    }
+                    if (total > 0) avg = sumPercent / total;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+            final boolean usedBackend = backendSuccess;
             int finalTotal = total;
             double finalAvg = avg;
             runOnUiThread(() -> {
-                if (results.isEmpty()) {
-                    loadLocalHistory();
-                } else {
+                if (usedBackend) {
+                    // Backend responded — show its data (even if empty)
                     historyRecyclerView.setAdapter(new HistoryAdapter(results));
                     totalQuizzesText.setText(String.valueOf(finalTotal));
-                    avgScoreText.setText(
-                            finalTotal > 0 ? String.format(Locale.getDefault(), "%.1f pts", finalAvg) : "0 pts");
+                    avgScoreText.setText(finalTotal > 0
+                            ? String.format(Locale.getDefault(), "%.1f%%", finalAvg) : "0%");
+                } else {
+                    // Backend unreachable — fall back to local
+                    loadLocalHistory();
                 }
             });
         }).start();
@@ -138,13 +154,45 @@ public class ProfileActivity extends AppCompatActivity {
         totalQuizzesText.setText(String.valueOf(total));
         if (total > 0) {
             double avg = Math.max(0.0, (double) prefManager.getTotalScore() / total);
-            avgScoreText.setText(String.format(Locale.getDefault(), "%.1f pts", avg));
+            avgScoreText.setText(String.format(Locale.getDefault(), "%.1f%%", avg));
         } else {
-            avgScoreText.setText("0 pts");
+            avgScoreText.setText("0%");
         }
     }
 
 
+
+    private void clearHistory() {
+        String userId = prefManager.getUserId();
+        clearHistoryBtn.setEnabled(false);
+
+        new Thread(() -> {
+            boolean backendCleared = false;
+            if (userId != null) {
+                backendCleared = BackendService.clearUserHistory(userId);
+            }
+            // Always clear local DB and stats
+            new DatabaseHelper(this).clearHistory();
+            prefManager.clearStatsOnly();
+
+            final boolean success = backendCleared || userId == null;
+            runOnUiThread(() -> {
+                clearHistoryBtn.setEnabled(true);
+                if (success) {
+                    // Directly reset UI — don't re-fetch (backend already cleared)
+                    historyRecyclerView.setAdapter(new HistoryAdapter(new ArrayList<>()));
+                    totalQuizzesText.setText("0");
+                    avgScoreText.setText("0%");
+                    Toast.makeText(this, "History cleared successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Could not reach server. Local history cleared.", Toast.LENGTH_LONG).show();
+                    historyRecyclerView.setAdapter(new HistoryAdapter(new ArrayList<>()));
+                    totalQuizzesText.setText("0");
+                    avgScoreText.setText("0%");
+                }
+            });
+        }).start();
+    }
 
     private void setupNavigation() {
         bottomNavigation.setSelectedItemId(R.id.nav_profile);

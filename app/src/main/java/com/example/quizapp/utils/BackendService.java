@@ -51,6 +51,40 @@ public class BackendService {
         }
     }
 
+    private static String doDelete(String endpoint) throws IOException {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        try {
+            URL url = new URL(BASE_URL + endpoint);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.setRequestMethod("DELETE");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.connect();
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                String errorBody = readStream(connection.getErrorStream());
+                Log.e(TAG, "DELETE " + endpoint + " failed: " + responseCode + " " + errorBody);
+                return null;
+            }
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+            return builder.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+            if (connection != null)
+                connection.disconnect();
+        }
+    }
+
     private static String doPost(String endpoint, JSONObject payload) throws IOException {
         HttpURLConnection connection = null;
         BufferedWriter writer = null;
@@ -176,6 +210,16 @@ public class BackendService {
         } catch (Exception exception) {
             exception.printStackTrace();
             return null;
+        }
+    }
+
+    public static boolean clearUserHistory(String userId) {
+        try {
+            String response = doDelete("/api/users/" + userId + "/history");
+            return response != null;
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            return false;
         }
     }
 

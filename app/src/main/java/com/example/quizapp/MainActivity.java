@@ -2,15 +2,18 @@ package com.example.quizapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.quizapp.ui.profile.ProfileActivity;
 import com.example.quizapp.ui.quiz.QuizActivity;
 import com.example.quizapp.ui.topic.CategoryAdapter;
+import com.example.quizapp.utils.CalendarHelper;
+import com.example.quizapp.utils.NotificationHelper;
 import com.example.quizapp.utils.SharedPreferencesManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.util.Arrays;
@@ -22,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigation;
     private SharedPreferencesManager prefManager;
     private TextView userNameText, subtitleText;
+    private AppCompatImageButton notifBtn, calendarBtn;
     private boolean isLearnModeActive = false;
 
     @Override
@@ -30,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         prefManager = new SharedPreferencesManager(this);
+
+        // Create notification channel and schedule daily reminder at 8 PM
+        NotificationHelper.createChannel(this);
+        NotificationHelper.scheduleDailyReminder(this, 20);
+
         userNameText = findViewById(R.id.userNameText);
         subtitleText = findViewById(R.id.welcomeText);
 
@@ -54,6 +63,35 @@ public class MainActivity extends AppCompatActivity {
 
         categoryRecyclerView = findViewById(R.id.categoryRecyclerView);
         bottomNavigation = findViewById(R.id.bottomNavigation);
+        notifBtn = findViewById(R.id.notifBtn);
+        calendarBtn = findViewById(R.id.calendarBtn);
+
+        // Notification bell — show status and let user toggle daily reminder
+        notifBtn.setOnClickListener(v -> {
+            String[] options = {"Enable Daily Reminder (8 PM)", "Disable Daily Reminder"};
+            new AlertDialog.Builder(this)
+                .setTitle("🔔 Notifications")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        NotificationHelper.scheduleDailyReminder(this, 20);
+                        Toast.makeText(this, "Daily reminder set for 8:00 PM ✓", Toast.LENGTH_SHORT).show();
+                    } else {
+                        NotificationHelper.cancelDailyReminder(this);
+                        Toast.makeText(this, "Daily reminder cancelled", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .show();
+        });
+
+        // Calendar button — add a general study session for today
+        calendarBtn.setOnClickListener(v -> {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 10);
+            cal.set(java.util.Calendar.MINUTE, 0);
+            cal.set(java.util.Calendar.SECOND, 0);
+            CalendarHelper.addPracticeReminder(this, "Quiz Practice", 0, 0, cal.getTimeInMillis());
+        });
 
         // Handle navigation from Profile
         int targetTab = getIntent().getIntExtra("TARGET_TAB", R.id.nav_test);
