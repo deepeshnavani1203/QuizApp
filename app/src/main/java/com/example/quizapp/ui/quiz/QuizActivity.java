@@ -18,7 +18,6 @@ import com.example.quizapp.models.QuizResult;
 import com.example.quizapp.ui.result.ResultActivity;
 import com.example.quizapp.utils.BackendService;
 import com.example.quizapp.utils.DatabaseHelper;
-import com.example.quizapp.utils.QuestionBank;
 import com.example.quizapp.utils.SecurityHelper;
 import com.example.quizapp.utils.SharedPreferencesManager;
 import java.io.BufferedReader;
@@ -108,69 +107,38 @@ public class QuizActivity extends AppCompatActivity {
             List<Question> fetched = fetchQuestionsFromBackend(category, difficulty, isLearnMode);
             runOnUiThread(() -> {
                 skeletonLayout.setVisibility(View.GONE);
-                quizContentGroup.setVisibility(View.VISIBLE);
 
                 if (fetched != null && !fetched.isEmpty()) {
+                    quizContentGroup.setVisibility(View.VISIBLE);
                     questionList = fetched;
                     currentQuestionIndex = 0;
                     displayQuestion();
                     if (!isLearnMode) {
                         scoreText.setVisibility(View.VISIBLE);
                         startTimer();
-                        // Silently enable DND if permission was already granted
                         SecurityHelper.enableDnd(this, true);
                     } else {
                         scoreText.setVisibility(View.GONE);
                     }
                 } else {
-                    useFallbackQuestions();
+                    // Backend failed — show error, do NOT load offline garbage
+                    showBackendError();
                 }
             });
         }).start();
     }
 
-    private void useFallbackQuestions() {
-        String localCategory = mapCategoryToLocal(category);
-        questionList = QuestionBank.getQuestions(localCategory, difficulty, isLearnMode);
-        if (questionList == null || questionList.isEmpty()) {
-            Toast.makeText(this, "Questions unavailable", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        Toast.makeText(this, "Using offline questions", Toast.LENGTH_SHORT).show();
-        currentQuestionIndex = 0;
-        displayQuestion();
-        if (!isLearnMode) {
-            startTimer();
-            SecurityHelper.enableDnd(this, true);
-        }
-    }
-
-    private String mapCategoryToLocal(String category) {
-        switch (category) {
-            case "Java Basics":
-                return "Java";
-            case "C Programming":
-                return "C";
-            case "C++ Basics":
-                return "C++";
-            case "Python Basics":
-                return "Python";
-            case "JavaScript Basics":
-                return "JS";
-            case "Git Fundamentals":
-                return "Git";
-            case "Operating Systems":
-                return "OS";
-            case "ReactJS":
-                return "React";
-            case "Node.js":
-                return "Node.js";
-            case "DBMS":
-                return "DBMS";
-            default:
-                return category;
-        }
+    private void showBackendError() {
+        new AlertDialog.Builder(this)
+            .setTitle("Cannot Load Questions")
+            .setMessage("Could not connect to the server. Please check your internet connection and make sure the server is running, then try again.")
+            .setPositiveButton("Retry", (d, w) -> {
+                skeletonLayout.setVisibility(View.VISIBLE);
+                loadQuestions();
+            })
+            .setNegativeButton("Go Back", (d, w) -> finish())
+            .setCancelable(false)
+            .show();
     }
 
     private String mapLocalCategoryToBackend(String category) {
@@ -192,54 +160,72 @@ public class QuizActivity extends AppCompatActivity {
     private List<Question> fetchQuestionsFromBackend(String category, String difficulty, boolean isLearnMode) {
         try {
             String quizzesResponse = getJsonFromUrl(BackendService.BASE_URL + "/api/quizzes");
-            if (quizzesResponse == null)
+            if (quizzesResponse == null) {
+                android.util.Log.e("QuizActivity", "Failed to fetch quiz list from: " + BackendService.BASE_URL);
                 return null;
+            }
 
             JSONArray quizzes = new JSONArray(quizzesResponse);
             String quizId = null;
             String backendCategory = mapLocalCategoryToBackend(category);
+
             for (int i = 0; i < quizzes.length(); i++) {
                 JSONObject quiz = quizzes.getJSONObject(i);
-                if (backendCategory.equalsIgnoreCase(quiz.optString("title"))) {
+                String title = quiz.optString("title", "");
+                if (backendCategory.equalsIgnoreCase(title)) {
                     quizId = quiz.optString("_id");
                     break;
                 }
             }
-            if (quizId == null && quizzes.length() > 0) {
-                quizId = quizzes.getJSONObject(0).optString("_id");
-            }
-            if (quizId == null)
+
+            if (quizId == null || quizId.isEmpty()) {
+                android.util.Log.e("QuizActivity", "No quiz found for category: " + backendCategory
+                        + ". Available: " + quizzesResponse);
                 return null;
+            }
+
             currentQuizId = quizId;
+            android.util.Log.d("QuizActivity", "Found quiz id: " + quizId + " for category: " + backendCategory);
 
             String quizResponse = getJsonFromUrl(BackendService.BASE_URL + "/api/quizzes/" + quizId);
-            if (quizResponse == null)
+            if (quizResponse == null) {
+                android.util.Log.e("QuizActivity", "Failed to fetch quiz by id: " + quizId);
                 return null;
+            }
 
             JSONObject quizObject = new JSONObject(quizResponse);
+            // Backend returns { id: ..., questions: [...] } — use "id" not "_id"
             JSONArray questionsJson = quizObject.optJSONArray("questions");
-            if (questionsJson == null)
+            if (questionsJson == null || questionsJson.length() == 0) {
+                android.util.Log.e("QuizActivity", "Quiz has no questions. Response: " + quizResponse);
                 return null;
+            }
 
             List<Question> questions = new ArrayList<>();
             java.util.Set<String> seenTexts = new java.util.HashSet<>();
             for (int i = 0; i < questionsJson.length(); i++) {
                 JSONObject q = questionsJson.getJSONObject(i);
-                String questionText = q.optString("questionText");
-                if (questionText != null && !questionText.trim().isEmpty()) {
-                    if (seenTexts.contains(questionText.trim().toLowerCase())) continue;
-                    seenTexts.add(questionText.trim().toLowerCase());
-                }
+                String qText = q.optString("questionText", "").trim();
+                if (qText.isEmpty()) continue;
+                if (seenTexts.contains(qText.toLowerCase())) continue;
+                seenTexts.add(qText.toLowerCase());
+
                 JSONArray optionsJson = q.optJSONArray("options");
                 List<String> options = new ArrayList<>();
                 for (int j = 0; optionsJson != null && j < optionsJson.length(); j++) {
                     options.add(optionsJson.optString(j));
                 }
+                if (options.isEmpty()) continue; // skip malformed questions
+
                 int correctOptionIndex = q.optInt("correctOptionIndex", 0);
-                String topic = q.optString("topic");
-                String diff = q.optString("difficulty", "Medium");
-                questions.add(new Question(questionText, options, correctOptionIndex, topic, diff));
+                String topic = q.optString("topic", category);
+                String diff = q.optString("difficulty", "medium");
+                questions.add(new Question(qText, options, correctOptionIndex, topic, diff));
             }
+
+            android.util.Log.d("QuizActivity", "Loaded " + questions.size() + " questions from backend");
+
+            if (questions.isEmpty()) return null;
 
             if (!isLearnMode && !"Random".equalsIgnoreCase(difficulty)) {
                 List<Question> filtered = new ArrayList<>();
@@ -247,6 +233,11 @@ public class QuizActivity extends AppCompatActivity {
                     if (difficulty.equalsIgnoreCase(q.getDifficulty())) {
                         filtered.add(q);
                     }
+                }
+                // If no questions match the difficulty, return all (don't fall back to offline)
+                if (filtered.isEmpty()) {
+                    android.util.Log.w("QuizActivity", "No questions for difficulty: " + difficulty + ", using all questions");
+                    filtered = questions;
                 }
                 Collections.shuffle(filtered);
                 return filtered.size() > 20 ? new ArrayList<>(filtered.subList(0, 20)) : filtered;
@@ -259,7 +250,7 @@ public class QuizActivity extends AppCompatActivity {
                 return questions.size() > 20 ? new ArrayList<>(questions.subList(0, 20)) : questions;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            android.util.Log.e("QuizActivity", "Exception in fetchQuestionsFromBackend: " + e.getMessage(), e);
             return null;
         }
     }

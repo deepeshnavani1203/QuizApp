@@ -74,23 +74,24 @@ public class LoginActivity extends AppCompatActivity {
 
             new Thread(() -> {
                 try {
+                    Log.i("LoginActivity", "Attempting login for: " + email);
                     JSONObject response = BackendService.login(email, password);
                     if (response != null && response.has("user")) {
                         JSONObject user = response.getJSONObject("user");
                         String userId    = user.optString("id");
                         String name      = user.optString("name");
                         String userEmail = user.optString("email");
+                        Log.i("LoginActivity", "Login success — userId=" + userId + " name=" + name);
                         prefManager.saveBackendUser(userId, name, userEmail);
                         prefManager.setLoggedIn(true);
 
                         runOnUiThread(() -> {
                             progressBar.setVisibility(android.view.View.GONE);
                             loginBtn.setEnabled(true);
-                            // Ask permissions once after first login
                             askPermissionsOnce();
                         });
                     } else {
-                        Log.e("AuthError", "Login failed: invalid response.");
+                        Log.e("LoginActivity", "Login failed — response=" + (response != null ? response.toString() : "null"));
                         runOnUiThread(() -> {
                             progressBar.setVisibility(android.view.View.GONE);
                             loginBtn.setEnabled(true);
@@ -99,7 +100,7 @@ public class LoginActivity extends AppCompatActivity {
                         });
                     }
                 } catch (Exception e) {
-                    Log.e("AuthError", "Exception during login.", e);
+                    Log.e("LoginActivity", "Login exception: " + e.getMessage(), e);
                     runOnUiThread(() -> {
                         progressBar.setVisibility(android.view.View.GONE);
                         loginBtn.setEnabled(true);

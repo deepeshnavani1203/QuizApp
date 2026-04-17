@@ -2,6 +2,7 @@ package com.example.quizapp.ui.profile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -53,17 +54,23 @@ public class ProfileActivity extends AppCompatActivity {
         if (userId != null) {
             new Thread(() -> {
                 try {
+                    Log.i("ProfileActivity", "Fetching profile for userId=" + userId);
                     JSONObject userProfile = BackendService.getUserProfile(userId);
                     if (userProfile != null) {
                         String name = userProfile.optString("name", prefManager.getUserName());
                         String email = userProfile.optString("email", prefManager.getUserEmail());
+                        Log.i("ProfileActivity", "Profile fetched — name=" + name);
                         prefManager.saveBackendUser(userId, name, email);
                         runOnUiThread(() -> {
                             profileName.setText(name);
                             profileEmail.setText(email);
                         });
+                    } else {
+                        Log.w("ProfileActivity", "getUserProfile returned null for userId=" + userId);
                     }
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    Log.e("ProfileActivity", "getUserProfile exception: " + e.getMessage(), e);
+                }
             }).start();
         }
 
@@ -103,9 +110,11 @@ public class ProfileActivity extends AppCompatActivity {
             double avg = 0;
             boolean backendSuccess = false;
             try {
+                Log.i("ProfileActivity", "Fetching history for userId=" + userId);
                 JSONArray history = BackendService.getUserHistory(userId);
                 if (history != null) {
                     backendSuccess = true;
+                    Log.i("ProfileActivity", "History fetched — " + history.length() + " entries");
                     double sumPercent = 0;
                     for (int i = 0; i < history.length(); i++) {
                         JSONObject item = history.getJSONObject(i);
@@ -122,9 +131,11 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                     total = results.size();
                     if (total > 0) avg = sumPercent / total;
+                } else {
+                    Log.w("ProfileActivity", "getUserHistory returned null — backend unreachable");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("ProfileActivity", "getUserHistory exception: " + e.getMessage(), e);
             }
 
             final boolean usedBackend = backendSuccess;
@@ -169,11 +180,14 @@ public class ProfileActivity extends AppCompatActivity {
         new Thread(() -> {
             boolean backendCleared = false;
             if (userId != null) {
+                Log.i("ProfileActivity", "Clearing history for userId=" + userId);
                 backendCleared = BackendService.clearUserHistory(userId);
+                Log.i("ProfileActivity", "clearUserHistory result=" + backendCleared);
             }
-            // Always clear local DB and stats
             new DatabaseHelper(this).clearHistory();
+            Log.i("ProfileActivity", "Local SQLite history cleared");
             prefManager.clearStatsOnly();
+            Log.i("ProfileActivity", "SharedPreferences stats cleared");
 
             final boolean success = backendCleared || userId == null;
             runOnUiThread(() -> {

@@ -53,10 +53,12 @@ public class RegisterActivity extends AppCompatActivity {
             SharedPreferencesManager prefManager = new SharedPreferencesManager(this);
             new Thread(() -> {
                 try {
+                    Log.i("RegisterActivity", "Attempting signup for: " + email);
                     JSONObject response = BackendService.signup(name, email, password);
                     if (response != null && response.has("user")) {
                         JSONObject user = response.getJSONObject("user");
                         String userId = user.optString("id");
+                        Log.i("RegisterActivity", "Signup success — userId=" + userId);
                         prefManager.saveBackendUser(userId, name, email);
                         runOnUiThread(() -> {
                             progressBar.setVisibility(android.view.View.GONE);
@@ -66,7 +68,7 @@ public class RegisterActivity extends AppCompatActivity {
                             finish();
                         });
                     } else {
-                        Log.e("AuthError", "Signup failed: Server response is null or missing user.");
+                        Log.e("RegisterActivity", "Signup failed — response=" + (response != null ? response.toString() : "null"));
                         runOnUiThread(() -> {
                             progressBar.setVisibility(android.view.View.GONE);
                             registerBtn.setEnabled(true);
@@ -75,7 +77,7 @@ public class RegisterActivity extends AppCompatActivity {
                         });
                     }
                 } catch (Exception e) {
-                    Log.e("AuthError", "Exception during signup process.", e);
+                    Log.e("RegisterActivity", "Signup exception: " + e.getMessage(), e);
                     runOnUiThread(() -> {
                         progressBar.setVisibility(android.view.View.GONE);
                         registerBtn.setEnabled(true);
