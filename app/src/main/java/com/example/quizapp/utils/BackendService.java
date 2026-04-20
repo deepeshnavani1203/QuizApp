@@ -15,7 +15,7 @@ import java.net.URL;
 
 public class BackendService {
     private static final String TAG = "BackendService";
-    public static final String BASE_URL = "http://172.22.19.34:5000";
+    public static final String BASE_URL = "http://10.183.247.34:5000";
 
     private static String doGet(String endpoint) throws IOException {
         Log.d(TAG, "GET --> " + BASE_URL + endpoint);
