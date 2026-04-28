@@ -15,7 +15,7 @@ import java.net.URL;
 
 public class BackendService {
     private static final String TAG = "BackendService";
-    public static final String BASE_URL = "http://10.183.247.34:5000";
+    public static final String BASE_URL = "http://10.78.181.34:5000";
 
     private static String doGet(String endpoint) throws IOException {
         Log.d(TAG, "GET --> " + BASE_URL + endpoint);
@@ -42,13 +42,16 @@ public class BackendService {
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             StringBuilder builder = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) builder.append(line);
+            while ((line = reader.readLine()) != null)
+                builder.append(line);
             String result = builder.toString();
             Log.d(TAG, "GET SUCCESS " + endpoint + " | length=" + result.length());
             return result;
         } finally {
-            if (reader != null) reader.close();
-            if (connection != null) connection.disconnect();
+            if (reader != null)
+                reader.close();
+            if (connection != null)
+                connection.disconnect();
         }
     }
 
@@ -83,14 +86,18 @@ public class BackendService {
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             StringBuilder builder = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) builder.append(line);
+            while ((line = reader.readLine()) != null)
+                builder.append(line);
             String result = builder.toString();
             Log.d(TAG, "POST SUCCESS " + endpoint + " | response=" + result);
             return result;
         } finally {
-            if (writer != null) writer.close();
-            if (reader != null) reader.close();
-            if (connection != null) connection.disconnect();
+            if (writer != null)
+                writer.close();
+            if (reader != null)
+                reader.close();
+            if (connection != null)
+                connection.disconnect();
         }
     }
 
@@ -119,22 +126,27 @@ public class BackendService {
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             StringBuilder builder = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) builder.append(line);
+            while ((line = reader.readLine()) != null)
+                builder.append(line);
             String result = builder.toString();
             Log.d(TAG, "DELETE SUCCESS " + endpoint + " | response=" + result);
             return result;
         } finally {
-            if (reader != null) reader.close();
-            if (connection != null) connection.disconnect();
+            if (reader != null)
+                reader.close();
+            if (connection != null)
+                connection.disconnect();
         }
     }
 
     private static String readStream(InputStream inputStream) throws IOException {
-        if (inputStream == null) return "";
+        if (inputStream == null)
+            return "";
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuilder builder = new StringBuilder();
         String line;
-        while ((line = reader.readLine()) != null) builder.append(line);
+        while ((line = reader.readLine()) != null)
+            builder.append(line);
         reader.close();
         return builder.toString();
     }

@@ -44,7 +44,6 @@ public class QuizActivity extends AppCompatActivity {
     private Button nextBtn, prevBtn;
     private View skeletonLayout;
     private androidx.constraintlayout.widget.Group quizContentGroup;
-
     private List<Question> questionList;
     private int currentQuestionIndex = 0;
     private String category, difficulty;
@@ -130,30 +129,42 @@ public class QuizActivity extends AppCompatActivity {
 
     private void showBackendError() {
         new AlertDialog.Builder(this)
-            .setTitle("Cannot Load Questions")
-            .setMessage("Could not connect to the server. Please check your internet connection and make sure the server is running, then try again.")
-            .setPositiveButton("Retry", (d, w) -> {
-                skeletonLayout.setVisibility(View.VISIBLE);
-                loadQuestions();
-            })
-            .setNegativeButton("Go Back", (d, w) -> finish())
-            .setCancelable(false)
-            .show();
+                .setTitle("Cannot Load Questions")
+                .setMessage(
+                        "Could not connect to the server. Please check your internet connection and make sure the server is running, then try again.")
+                .setPositiveButton("Retry", (d, w) -> {
+                    skeletonLayout.setVisibility(View.VISIBLE);
+                    loadQuestions();
+                })
+                .setNegativeButton("Go Back", (d, w) -> finish())
+                .setCancelable(false)
+                .show();
     }
 
     private String mapLocalCategoryToBackend(String category) {
         switch (category) {
-            case "Java": return "Java Basics";
-            case "C": return "C Programming";
-            case "C++": return "C++ Basics";
-            case "Python": return "Python Basics";
-            case "JS": return "JavaScript Basics";
-            case "Git": return "Git Fundamentals";
-            case "OS": return "Operating Systems";
-            case "React": return "ReactJS";
-            case "Node.js": return "Node.js";
-            case "DBMS": return "DBMS";
-            default: return category;
+            case "Java":
+                return "Java Basics";
+            case "C":
+                return "C Programming";
+            case "C++":
+                return "C++ Basics";
+            case "Python":
+                return "Python Basics";
+            case "JS":
+                return "JavaScript Basics";
+            case "Git":
+                return "Git Fundamentals";
+            case "OS":
+                return "Operating Systems";
+            case "React":
+                return "ReactJS";
+            case "Node.js":
+                return "Node.js";
+            case "DBMS":
+                return "DBMS";
+            default:
+                return category;
         }
     }
 
@@ -206,8 +217,10 @@ public class QuizActivity extends AppCompatActivity {
             for (int i = 0; i < questionsJson.length(); i++) {
                 JSONObject q = questionsJson.getJSONObject(i);
                 String qText = q.optString("questionText", "").trim();
-                if (qText.isEmpty()) continue;
-                if (seenTexts.contains(qText.toLowerCase())) continue;
+                if (qText.isEmpty())
+                    continue;
+                if (seenTexts.contains(qText.toLowerCase()))
+                    continue;
                 seenTexts.add(qText.toLowerCase());
 
                 JSONArray optionsJson = q.optJSONArray("options");
@@ -215,7 +228,8 @@ public class QuizActivity extends AppCompatActivity {
                 for (int j = 0; optionsJson != null && j < optionsJson.length(); j++) {
                     options.add(optionsJson.optString(j));
                 }
-                if (options.isEmpty()) continue; // skip malformed questions
+                if (options.isEmpty())
+                    continue; // skip malformed questions
 
                 int correctOptionIndex = q.optInt("correctOptionIndex", 0);
                 String topic = q.optString("topic", category);
@@ -225,7 +239,8 @@ public class QuizActivity extends AppCompatActivity {
 
             android.util.Log.d("QuizActivity", "Loaded " + questions.size() + " questions from backend");
 
-            if (questions.isEmpty()) return null;
+            if (questions.isEmpty())
+                return null;
 
             if (!isLearnMode && !"Random".equalsIgnoreCase(difficulty)) {
                 List<Question> filtered = new ArrayList<>();
@@ -236,7 +251,8 @@ public class QuizActivity extends AppCompatActivity {
                 }
                 // If no questions match the difficulty, return all (don't fall back to offline)
                 if (filtered.isEmpty()) {
-                    android.util.Log.w("QuizActivity", "No questions for difficulty: " + difficulty + ", using all questions");
+                    android.util.Log.w("QuizActivity",
+                            "No questions for difficulty: " + difficulty + ", using all questions");
                     filtered = questions;
                 }
                 Collections.shuffle(filtered);
@@ -381,10 +397,12 @@ public class QuizActivity extends AppCompatActivity {
     private void startTimer() {
         if (countDownTimer != null)
             countDownTimer.cancel();
-        
+
         long duration = 30000; // Default Easy
-        if ("Medium".equalsIgnoreCase(difficulty)) duration = 25000;
-        else if ("Hard".equalsIgnoreCase(difficulty)) duration = 20000;
+        if ("Medium".equalsIgnoreCase(difficulty))
+            duration = 25000;
+        else if ("Hard".equalsIgnoreCase(difficulty))
+            duration = 20000;
 
         countDownTimer = new CountDownTimer(duration, 1000) {
             @Override
@@ -407,25 +425,28 @@ public class QuizActivity extends AppCompatActivity {
             currentQ.setTimeTakenMs(System.currentTimeMillis() - questionStartTime);
 
             int selectedIndex = currentQ.getUserSelectedAnswerIndex();
-            
+
             if (selectedIndex == -1 && !isAutoSkip) {
                 Toast.makeText(this, "Please select an answer to continue.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            
-            // Score calculation: If auto-skipped, treat as wrong/skipped (0 marks usually, but negative in hard mode)
+
+            // Score calculation: If auto-skipped, treat as wrong/skipped (0 marks usually,
+            // but negative in hard mode)
             if (selectedIndex != -1) {
                 if (selectedIndex == currentQ.getCorrectAnswerIndex()) {
                     sessionScore += 1;
                 } else {
-                    if ("Hard".equalsIgnoreCase(difficulty)) sessionScore -= 1;
+                    if ("Hard".equalsIgnoreCase(difficulty))
+                        sessionScore -= 1;
                 }
             } else if (isAutoSkip) {
                 // Penalize for skipping in Hard mode if desired, otherwise +0
-                if ("Hard".equalsIgnoreCase(difficulty)) sessionScore -= 1; 
+                if ("Hard".equalsIgnoreCase(difficulty))
+                    sessionScore -= 1;
             }
-            
-            scoreText.setText("Score: " + sessionScore);
+
+            scoreText.setText("Score: " + Math.max(0, sessionScore));
         }
 
         if (currentQuestionIndex < questionList.size() - 1) {
@@ -461,20 +482,36 @@ public class QuizActivity extends AppCompatActivity {
             return;
         }
 
-        int score = sessionScore;
-        // Logic updated to use real-time sessionScore which handles negative marking.
+        int score = Math.max(0, sessionScore); // Ensure score is never negative
+
+        // Calculate correct and incorrect answers from Question objects
+        int correctAnswers = 0;
+        int incorrectAnswers = 0;
+        for (Question q : questionList) {
+            if (q.getUserSelectedAnswerIndex() == q.getCorrectAnswerIndex()) {
+                correctAnswers++;
+            } else {
+                // If selectedAnswer is not correct, it's incorrect (includes skips)
+                incorrectAnswers++;
+            }
+        }
 
         prefManager.addStats(score);
         String date = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
-        QuizResult result = new QuizResult(category + " (Test)", score, questionList.size(), date);
+        int timeTakenSeconds = (int) ((System.currentTimeMillis() - quizStartTime) / 1000);
+        int accuracy = (correctAnswers * 100) / questionList.size();
+        QuizResult result = new QuizResult(category + " (Test)", score, questionList.size(), timeTakenSeconds, accuracy, date);
         new DatabaseHelper(this).addResult(result);
 
-        submitResultToBackend(score, questionList.size(), score, questionList.size() - score,
-                (int) ((System.currentTimeMillis() - quizStartTime) / 1000), questionList);
+        submitResultToBackend(score, questionList.size(), correctAnswers, incorrectAnswers,
+                timeTakenSeconds, questionList);
 
         Intent intent = new Intent(this, ResultActivity.class);
         intent.putExtra("SCORE", score);
         intent.putExtra("TOTAL", questionList.size());
+        intent.putExtra("CORRECT", correctAnswers);
+        intent.putExtra("INCORRECT", incorrectAnswers);
+        intent.putExtra("TIME_TAKEN", timeTakenSeconds);
         intent.putExtra("TOPIC", category);
         intent.putExtra("DIFFICULTY", difficulty);
         intent.putExtra("QUESTIONS", (ArrayList<Question>) questionList);

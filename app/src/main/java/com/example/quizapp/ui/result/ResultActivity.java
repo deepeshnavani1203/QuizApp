@@ -18,6 +18,7 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
 import com.example.quizapp.models.Question;
+import com.example.quizapp.ui.perfect.PerfectScoreActivity;
 import com.example.quizapp.ui.review.ReviewActivity;
 import com.example.quizapp.utils.CalendarHelper;
 import com.example.quizapp.utils.NotificationHelper;
@@ -30,8 +31,8 @@ public class ResultActivity extends AppCompatActivity {
     private String finalTopic;
 
     // Launcher for POST_NOTIFICATIONS permission (Android 13+)
-    private final ActivityResultLauncher<String> notifPermLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+    private final ActivityResultLauncher<String> notifPermLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), granted -> {
                 if (granted) {
                     NotificationHelper.showResultNotification(this, finalTopic,
                             finalScore, finalTotal, finalConfidencePct);
@@ -43,29 +44,40 @@ public class ResultActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
 
-        resultAnimation    = findViewById(R.id.resultAnimation);
-        TextView scoreValue       = findViewById(R.id.scoreValue);
-        TextView performanceText  = findViewById(R.id.performanceText);
-        TextView correctCount     = findViewById(R.id.correctCount);
-        TextView incorrectCount   = findViewById(R.id.incorrectCount);
-        TextView confidenceText   = findViewById(R.id.confidenceText);
-        TextView confidenceLabel  = findViewById(R.id.confidenceLabel);
+        resultAnimation = findViewById(R.id.resultAnimation);
+        TextView scoreValue = findViewById(R.id.scoreValue);
+        TextView performanceText = findViewById(R.id.performanceText);
+        TextView correctCount = findViewById(R.id.correctCount);
+        TextView incorrectCount = findViewById(R.id.incorrectCount);
+        TextView confidenceText = findViewById(R.id.confidenceText);
+        TextView confidenceLabel = findViewById(R.id.confidenceLabel);
         ProgressBar confidenceBar = findViewById(R.id.confidenceBar);
-        Button reviewBtn          = findViewById(R.id.reviewBtn);
-        Button calendarBtn        = findViewById(R.id.calendarBtn);
-        Button finishBtn          = findViewById(R.id.finishBtn);
+        Button reviewBtn = findViewById(R.id.reviewBtn);
+        Button calendarBtn = findViewById(R.id.calendarBtn);
+        Button finishBtn = findViewById(R.id.finishBtn);
 
-        finalScore  = getIntent().getIntExtra("SCORE", 0);
-        finalTotal  = getIntent().getIntExtra("TOTAL", 1);
-        finalTopic  = getIntent().getStringExtra("TOPIC");
+        finalScore = getIntent().getIntExtra("SCORE", 0);
+        finalScore = Math.max(0, finalScore); // Prevent negative scores
+        finalTotal = getIntent().getIntExtra("TOTAL", 1);
+        int finalCorrect = getIntent().getIntExtra("CORRECT", finalScore);
+        int finalIncorrect = getIntent().getIntExtra("INCORRECT", finalTotal - finalCorrect);
+        int timeTaken = getIntent().getIntExtra("TIME_TAKEN", 0);
+        finalTopic = getIntent().getStringExtra("TOPIC");
         String difficulty = getIntent().getStringExtra("DIFFICULTY");
-        int incorrect = finalTotal - finalScore;
-        ArrayList<Question> questions =
-                (ArrayList<Question>) getIntent().getSerializableExtra("QUESTIONS");
+
+        // Check for perfect score (20/20)
+        if (finalCorrect == finalTotal && finalTotal == 20) {
+            Intent perfectIntent = new Intent(this, PerfectScoreActivity.class);
+            perfectIntent.putExtra("TOPIC", finalTopic);
+            perfectIntent.putExtra("TOTAL", finalTotal);
+            startActivity(perfectIntent);
+            finish();
+            return;
+        }
 
         scoreValue.setText(String.format("%d/%d", finalScore, finalTotal));
-        correctCount.setText(String.valueOf(finalScore));
-        incorrectCount.setText(String.valueOf(incorrect));
+        correctCount.setText(String.valueOf(finalCorrect));
+        incorrectCount.setText(String.valueOf(finalIncorrect));
 
         double percentage = ((double) finalScore / finalTotal) * 100;
         if (percentage >= 80) {
@@ -79,50 +91,32 @@ public class ResultActivity extends AppCompatActivity {
             performanceText.setTextColor(android.graphics.Color.parseColor("#F44336"));
         }
 
-        // --- Confidence Meter ---
-        finalConfidencePct = 0;
-        if (questions != null && !questions.isEmpty()) {
-            long timeLimitMs;
-            if ("Hard".equalsIgnoreCase(difficulty))        timeLimitMs = 20000;
-            else if ("Medium".equalsIgnoreCase(difficulty)) timeLimitMs = 25000;
-            else                                             timeLimitMs = 30000;
-            long confidentThreshold = timeLimitMs / 2;
+        // --- Confidence Meter (Accuracy-based) ---
+        finalConfidencePct = (int) ((finalCorrect * 100.0) / finalTotal);
 
-            int confidentCount = 0, answeredCount = 0;
-            for (Question q : questions) {
-                if (q.getUserSelectedAnswerIndex() != -1) {
-                    answeredCount++;
-                    long t = q.getTimeTakenMs();
-                    if (t > 0 && t <= confidentThreshold) confidentCount++;
-                }
-            }
-            finalConfidencePct = answeredCount > 0
-                    ? (int) ((confidentCount * 100.0) / answeredCount) : 0;
+        confidenceBar.setMax(100);
+        ValueAnimator animator = ValueAnimator.ofInt(0, finalConfidencePct);
+        animator.setDuration(1200);
+        animator.setInterpolator(new DecelerateInterpolator());
+        animator.addUpdateListener(a -> confidenceBar.setProgress((int) a.getAnimatedValue()));
+        animator.start();
 
-            confidenceBar.setMax(100);
-            ValueAnimator animator = ValueAnimator.ofInt(0, finalConfidencePct);
-            animator.setDuration(1200);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.addUpdateListener(a -> confidenceBar.setProgress((int) a.getAnimatedValue()));
-            animator.start();
+        confidenceText.setText(finalConfidencePct + "%");
 
-            confidenceText.setText(finalConfidencePct + "%");
-
-            String label;
-            int labelColor;
-            if (finalConfidencePct >= 75) {
-                label = "You were confident in " + finalConfidencePct + "% of answers 💪";
-                labelColor = android.graphics.Color.parseColor("#4CAF50");
-            } else if (finalConfidencePct >= 40) {
-                label = "You were confident in " + finalConfidencePct + "% of answers 🤔";
-                labelColor = android.graphics.Color.parseColor("#FF9800");
-            } else {
-                label = "You were confident in " + finalConfidencePct + "% of answers 😅";
-                labelColor = android.graphics.Color.parseColor("#F44336");
-            }
-            confidenceLabel.setText(label);
-            confidenceLabel.setTextColor(labelColor);
+        String label;
+        int labelColor;
+        if (finalConfidencePct >= 75) {
+            label = "Accuracy: " + finalConfidencePct + "% - Excellent! 💪";
+            labelColor = android.graphics.Color.parseColor("#4CAF50");
+        } else if (finalConfidencePct >= 50) {
+            label = "Accuracy: " + finalConfidencePct + "% - Good effort! 🤔";
+            labelColor = android.graphics.Color.parseColor("#FF9800");
+        } else {
+            label = "Accuracy: " + finalConfidencePct + "% - Keep improving! 😅";
+            labelColor = android.graphics.Color.parseColor("#F44336");
         }
+        confidenceLabel.setText(label);
+        confidenceLabel.setTextColor(labelColor);
 
         // --- Fire result notification ---
         postResultNotification();
@@ -145,6 +139,12 @@ public class ResultActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        Button analyticsBtn = findViewById(R.id.analyticsBtn);
+        analyticsBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(this, com.example.quizapp.ui.analytics.AnalyticsActivity.class);
+            startActivity(intent);
+        });
+
         finishBtn.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -155,8 +155,8 @@ public class ResultActivity extends AppCompatActivity {
 
     private void postResultNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
                 return;
             }

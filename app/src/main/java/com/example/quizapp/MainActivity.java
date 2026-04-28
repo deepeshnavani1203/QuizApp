@@ -100,6 +100,36 @@ public class MainActivity extends AppCompatActivity {
         setupCategories(isLearnModeActive);
 
         setupNavigation();
+        checkAndRequestPermissions();
+    }
+
+    private void checkAndRequestPermissions() {
+        // 1. DND Permission (Notification Policy Access)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (!com.example.quizapp.utils.SecurityHelper.hasDndPermission(this)) {
+                showPermissionDialog("DND Access", 
+                    "Quizify needs DND access to prevent interruptions during quizzes. Please enable it in the next screen.",
+                    () -> com.example.quizapp.utils.SecurityHelper.requestDndPermission(this));
+            }
+        }
+
+        // 2. Notification Permission (Android 13+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, 
+                    android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, 
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+    }
+
+    private void showPermissionDialog(String title, String message, Runnable onConfirm) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Grant", (dialog, which) -> onConfirm.run())
+                .setNegativeButton("Later", null)
+                .show();
     }
 
     private void setupCategories(boolean isLearnMode) {
