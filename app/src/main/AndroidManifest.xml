@@ -36,6 +36,7 @@
         <activity android:name=".ui.profile.ProfileActivity" />
         <activity android:name=".ui.quiz.QuizActivity" />
         <activity android:name=".ui.result.ResultActivity" />
+        <activity android:name=".ui.quiz.QuestionSearchActivity" />
         <activity android:name=".ui.review.ReviewActivity" />
         <activity android:name=".ui.perfect.PerfectScoreActivity" />
         <activity android:name=".ui.analytics.AnalyticsActivity" />

@@ -6,14 +6,22 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.airbnb.lottie.LottieAnimationView;
 import com.example.quizapp.MainActivity;
 import com.example.quizapp.R;
@@ -23,6 +31,9 @@ import com.example.quizapp.ui.review.ReviewActivity;
 import com.example.quizapp.utils.CalendarHelper;
 import com.example.quizapp.utils.NotificationHelper;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ResultActivity extends AppCompatActivity {
 
@@ -34,8 +45,7 @@ public class ResultActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String> notifPermLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), granted -> {
                 if (granted) {
-                    NotificationHelper.showResultNotification(this, finalTopic,
-                            finalScore, finalTotal, finalConfidencePct);
+                    postResultNotification();
                 }
             });
 
@@ -61,9 +71,9 @@ public class ResultActivity extends AppCompatActivity {
         finalTotal = getIntent().getIntExtra("TOTAL", 1);
         int finalCorrect = getIntent().getIntExtra("CORRECT", finalScore);
         int finalIncorrect = getIntent().getIntExtra("INCORRECT", finalTotal - finalCorrect);
-        int timeTaken = getIntent().getIntExtra("TIME_TAKEN", 0);
         finalTopic = getIntent().getStringExtra("TOPIC");
         String difficulty = getIntent().getStringExtra("DIFFICULTY");
+        ArrayList<Question> questions = (ArrayList<Question>) getIntent().getSerializableExtra("QUESTIONS");
 
         // Check for perfect score (20/20)
         if (finalCorrect == finalTotal && finalTotal == 20) {
@@ -123,7 +133,6 @@ public class ResultActivity extends AppCompatActivity {
 
         // --- Calendar button ---
         calendarBtn.setOnClickListener(v -> {
-            // Schedule revision for tomorrow at 10 AM
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
             cal.set(java.util.Calendar.HOUR_OF_DAY, 10);
@@ -151,17 +160,120 @@ public class ResultActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+
+        // --- Per-Question Analysis ---
+        if (questions != null) {
+            RecyclerView analysisRecyclerView = findViewById(R.id.analysisRecyclerView);
+            analysisRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+            analysisRecyclerView.setAdapter(new AnalysisAdapter(questions));
+            
+            showRecommendations(questions);
+        }
+
+        // --- Export Feature ---
+        findViewById(R.id.exportBtn).setOnClickListener(v -> exportResults(questions));
+    }
+
+    private String formatTime(int totalSeconds) {
+        int m = totalSeconds / 60;
+        int s = totalSeconds % 60;
+        if (m > 0) return m + "m " + s + "s";
+        return s + "s";
+    }
+
+    private void showRecommendations(List<Question> questions) {
+        Map<String, Integer> wrongCounts = new HashMap<>();
+        for (Question q : questions) {
+            if (q.getUserSelectedAnswerIndex() != q.getCorrectAnswerIndex()) {
+                String topic = q.getTopic();
+                wrongCounts.put(topic, wrongCounts.getOrDefault(topic, 0) + 1);
+            }
+        }
+
+        if (!wrongCounts.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Based on your mistakes, you should focus on:\n");
+            for (String topic : wrongCounts.keySet()) {
+                sb.append("• ").append(topic).append("\n");
+            }
+            findViewById(R.id.recommendationCard).setVisibility(View.VISIBLE);
+            ((TextView) findViewById(R.id.weakTopicsText)).setText(sb.toString().trim());
+        }
+    }
+
+    private void exportResults(List<Question> questions) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Quiz Result: ").append(finalTopic).append("\n");
+        sb.append("Score: ").append(finalScore).append("/").append(finalTotal).append("\n");
+        sb.append("Accuracy: ").append(finalConfidencePct).append("%\n\n");
+        sb.append("--- Questions ---\n");
+        
+        for (int i = 0; i < questions.size(); i++) {
+            Question q = questions.get(i);
+            sb.append(i + 1).append(". ").append(q.getQuestionText()).append("\n");
+            sb.append("Your Answer: ").append(q.getUserSelectedAnswerIndex() != -1 ? q.getOptions().get(q.getUserSelectedAnswerIndex()) : "Skipped").append("\n");
+            sb.append("Correct Answer: ").append(q.getCorrectAnswer()).append("\n\n");
+        }
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Quiz Result - " + finalTopic);
+        intent.putExtra(Intent.EXTRA_TEXT, sb.toString());
+        startActivity(Intent.createChooser(intent, "Export Quiz Result"));
     }
 
     private void postResultNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
                 return;
             }
         }
         NotificationHelper.showResultNotification(this, finalTopic,
-                finalScore, finalTotal, finalConfidencePct);
+                finalScore, finalTotal, finalConfidencePct, formatTime(getIntent().getIntExtra("TIME_TAKEN", 0)));
+    }
+
+    // --- Inner Analysis Adapter ---
+    private class AnalysisAdapter extends RecyclerView.Adapter<AnalysisAdapter.ViewHolder> {
+        private List<Question> questions;
+
+        AnalysisAdapter(List<Question> questions) { this.questions = questions; }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_question_analysis, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Question q = questions.get(position);
+            holder.number.setText(String.valueOf(position + 1));
+            
+            boolean isCorrect = q.getUserSelectedAnswerIndex() == q.getCorrectAnswerIndex();
+            holder.status.setText(isCorrect ? "Correct" : (q.getUserSelectedAnswerIndex() == -1 ? "Skipped" : "Incorrect"));
+            holder.status.setTextColor(isCorrect ? android.graphics.Color.parseColor("#4CAF50") : android.graphics.Color.parseColor("#F44336"));
+            holder.time.setText("Time: " + (q.getTimeTakenMs() / 1000) + "s");
+            holder.icon.setImageResource(isCorrect ? R.drawable.ic_check : R.drawable.ic_close);
+            holder.icon.setColorFilter(isCorrect ? android.graphics.Color.parseColor("#4CAF50") : android.graphics.Color.parseColor("#F44336"));
+            
+            android.graphics.drawable.GradientDrawable bg = (android.graphics.drawable.GradientDrawable) holder.number.getBackground();
+            bg.setColor(isCorrect ? android.graphics.Color.parseColor("#4CAF50") : android.graphics.Color.parseColor("#F44336"));
+        }
+
+        @Override
+        public int getItemCount() { return questions.size(); }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView number, status, time;
+            ImageView icon;
+            ViewHolder(View v) {
+                super(v);
+                number = v.findViewById(R.id.qNumber);
+                status = v.findViewById(R.id.qStatus);
+                time = v.findViewById(R.id.qTime);
+                icon = v.findViewById(R.id.statusIcon);
+            }
+        }
     }
 }

@@ -47,6 +47,18 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
             holder.status.setBackgroundColor(Color.parseColor("#F44336"));
             holder.selectedAnswer.setTextColor(Color.parseColor("#F44336"));
         }
+
+        holder.explanation.setText(q.getExplanation());
+        
+        com.example.quizapp.utils.DatabaseHelper db = new com.example.quizapp.utils.DatabaseHelper(holder.itemView.getContext());
+        String savedNote = db.getNote(q.getId());
+        holder.notesInput.setText(savedNote);
+
+        holder.saveBtn.setOnClickListener(v -> {
+            String note = holder.notesInput.getText().toString().trim();
+            db.saveNote(q.getId(), note);
+            android.widget.Toast.makeText(holder.itemView.getContext(), "Note saved!", android.widget.Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
@@ -55,7 +67,9 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView questionText, selectedAnswer, correctAnswer, status;
+        TextView questionText, selectedAnswer, correctAnswer, status, explanation;
+        com.google.android.material.textfield.TextInputEditText notesInput;
+        android.widget.Button saveBtn;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -63,6 +77,9 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder
             selectedAnswer = itemView.findViewById(R.id.selectedAnswerText);
             correctAnswer = itemView.findViewById(R.id.correctAnswerText);
             status = itemView.findViewById(R.id.statusText);
+            explanation = itemView.findViewById(R.id.explanationText);
+            notesInput = itemView.findViewById(R.id.notesInput);
+            saveBtn = itemView.findViewById(R.id.saveNoteBtn);
         }
     }
 }

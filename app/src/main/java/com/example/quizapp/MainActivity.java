@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigation;
     private SharedPreferencesManager prefManager;
     private TextView userNameText, subtitleText;
-    private AppCompatImageButton notifBtn, calendarBtn;
+    private AppCompatImageButton notifBtn, calendarBtn, searchBtn;
     private boolean isLearnModeActive = false;
 
     @Override
@@ -65,6 +65,9 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
         notifBtn = findViewById(R.id.notifBtn);
         calendarBtn = findViewById(R.id.calendarBtn);
+        searchBtn = findViewById(R.id.searchBtn);
+
+        searchBtn.setOnClickListener(v -> startActivity(new Intent(this, com.example.quizapp.ui.quiz.QuestionSearchActivity.class)));
 
         // Notification bell — show status and let user toggle daily reminder
         notifBtn.setOnClickListener(v -> {

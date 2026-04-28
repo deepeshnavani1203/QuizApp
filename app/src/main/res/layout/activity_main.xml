@@ -42,6 +42,17 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Search Icon -->
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/searchBtn"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Search Questions"
+                android:src="@drawable/ic_search"
+                android:tint="?attr/colorPrimary" />
+
             <!-- Notification Bell Icon -->
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/notifBtn"

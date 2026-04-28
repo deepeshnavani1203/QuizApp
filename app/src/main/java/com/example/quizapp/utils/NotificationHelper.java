@@ -32,10 +32,11 @@ public class NotificationHelper {
     }
 
     /** Show an immediate notification after quiz result */
-    public static void showResultNotification(Context context, String topic, int score, int total, int confidencePct) {
+    public static void showResultNotification(Context context, String topic, int score, int total, int confidencePct, String timeTaken) {
         String title = "Quiz Complete – " + topic;
         String body = "Score: " + score + "/" + total +
-                " · Confidence: " + confidencePct + "%" +
+                " · Time: " + timeTaken +
+                " · Accuracy: " + confidencePct + "%" +
                 (confidencePct >= 75 ? " 💪" : confidencePct >= 40 ? " 🤔" : " 😅");
 
         Intent tapIntent = new Intent(context, SplashActivity.class);

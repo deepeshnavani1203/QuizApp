@@ -15,6 +15,12 @@ public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferencesManager prefManager = new SharedPreferencesManager(this);
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            prefManager.isDarkMode() ? androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES 
+                                     : androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        );
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
@@ -24,8 +30,6 @@ public class SplashActivity extends AppCompatActivity {
         logo.startAnimation(fadeIn);
 
         new Handler().postDelayed(() -> {
-            SharedPreferencesManager prefManager = new SharedPreferencesManager(this);
-            
             // ONE-TIME CLEANUP LOGIC
             android.content.SharedPreferences prefs = getSharedPreferences("CleanupPrefs", MODE_PRIVATE);
             if (!prefs.getBoolean("is_cleaned_v1", false)) {

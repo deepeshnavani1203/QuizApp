@@ -52,13 +52,13 @@ public class QuestionBank {
 
         // Sample Core Questions
         if (topic.equals("Java")) {
-            list.add(new Question("Size of char in Java?", Arrays.asList("4-bit", "8-bit", "16-bit", "32-bit"), 2,
-                    "Java", "Easy"));
-            list.add(new Question("Which keyword is used for inheritance?",
-                    Arrays.asList("extends", "implements", "inherits", "using"), 0, "Java", "Easy"));
+            list.add(new Question("j1", "Size of char in Java?", Arrays.asList("4-bit", "8-bit", "16-bit", "32-bit"), 2,
+                    "Java", "Easy", ""));
+            list.add(new Question("j2", "Which keyword is used for inheritance?",
+                    Arrays.asList("extends", "implements", "inherits", "using"), 0, "Java", "Easy", ""));
         } else if (topic.equals("Python")) {
-            list.add(new Question("Python dictionary is defined by?", Arrays.asList("[]", "{}", "()", "<>"), 1,
-                    "Python", "Easy"));
+            list.add(new Question("p1", "Python dictionary is defined by?", Arrays.asList("[]", "{}", "()", "<>"), 1,
+                    "Python", "Easy", ""));
         }
 
         // Generate up to 150 placeholder questions with clean option labels
@@ -69,7 +69,7 @@ public class QuestionBank {
             int correctIndex = i % 4; // rotate correct answer for variety
             String diff = (i % 3 == 0) ? "Hard" : (i % 2 == 0 ? "Medium" : "Easy");
 
-            list.add(new Question(qText, options, correctIndex, topic, diff));
+            list.add(new Question(topic + "_" + i, qText, options, correctIndex, topic, diff, ""));
         }
         return list;
     }

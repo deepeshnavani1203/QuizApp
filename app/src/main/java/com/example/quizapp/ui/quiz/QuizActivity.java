@@ -234,7 +234,9 @@ public class QuizActivity extends AppCompatActivity {
                 int correctOptionIndex = q.optInt("correctOptionIndex", 0);
                 String topic = q.optString("topic", category);
                 String diff = q.optString("difficulty", "medium");
-                questions.add(new Question(qText, options, correctOptionIndex, topic, diff));
+                String id = q.optString("_id", q.optString("id", String.valueOf(i)));
+                String explanation = q.optString("explanation", "");
+                questions.add(new Question(id, qText, options, correctOptionIndex, topic, diff, explanation));
             }
 
             android.util.Log.d("QuizActivity", "Loaded " + questions.size() + " questions from backend");

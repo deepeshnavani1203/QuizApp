@@ -12,6 +12,7 @@ public class SharedPreferencesManager {
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_TOTAL_SCORE = "totalScore";
     private static final String KEY_TOTAL_QUIZZES = "totalQuizzes";
+    private static final String KEY_DARK_MODE = "isDarkMode";
 
     private SharedPreferences sharedPreferences;
 
@@ -85,5 +86,13 @@ public class SharedPreferencesManager {
 
     public void clearData() {
         sharedPreferences.edit().clear().commit();
+    }
+
+    public void setDarkMode(boolean isDark) {
+        sharedPreferences.edit().putBoolean(KEY_DARK_MODE, isDark).apply();
+    }
+
+    public boolean isDarkMode() {
+        return sharedPreferences.getBoolean(KEY_DARK_MODE, false);
     }
 }

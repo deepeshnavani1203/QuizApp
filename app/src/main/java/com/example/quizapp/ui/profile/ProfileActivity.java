@@ -46,6 +46,16 @@ public class ProfileActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
         logoutBtn = findViewById(R.id.logoutBtn);
         clearHistoryBtn = findViewById(R.id.clearHistoryBtn);
+        com.google.android.material.switchmaterial.SwitchMaterial darkModeSwitch = findViewById(R.id.darkModeSwitch);
+
+        darkModeSwitch.setChecked(prefManager.isDarkMode());
+        darkModeSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            prefManager.setDarkMode(isChecked);
+            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                isChecked ? androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES 
+                          : androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            );
+        });
 
         profileName.setText(prefManager.getUserName());
         profileEmail.setText(prefManager.getUserEmail());
@@ -124,7 +134,9 @@ public class ProfileActivity extends AppCompatActivity {
                         int score = item.optInt("score", 0);
                         int totalQuestions = item.optInt("totalQuestions", 0);
                         String date = item.optString("date", "");
-                        results.add(new QuizResult(quizName, score, totalQuestions, date));
+                        int timeTaken = item.optInt("timeTaken", 0);
+                        int accuracy = item.optInt("accuracy", totalQuestions > 0 ? (score * 100 / totalQuestions) : 0);
+                        results.add(new QuizResult(quizName, score, totalQuestions, timeTaken, accuracy, date));
                         if (totalQuestions > 0) {
                             sumPercent += (double) score / totalQuestions * 100;
                         }

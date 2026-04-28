@@ -58,10 +58,10 @@ public class QuizData {
         List<Question> list = new ArrayList<>();
         // Real Base Questions
         if (topic.equals("Java")) {
-            list.add(new Question("Size of float in Java?", Arrays.asList("16-bit", "32-bit", "64-bit", "8-bit"), 1, "Java", "Easy"));
-            list.add(new Question("Java is a ___ language.", Arrays.asList("Object-Oriented", "Functional", "Procedural", "Logic"), 0, "Java", "Easy"));
+            list.add(new Question("j1_data", "Size of float in Java?", Arrays.asList("16-bit", "32-bit", "64-bit", "8-bit"), 1, "Java", "Easy", ""));
+            list.add(new Question("j2_data", "Java is a ___ language.", Arrays.asList("Object-Oriented", "Functional", "Procedural", "Logic"), 0, "Java", "Easy", ""));
         } else if (topic.equals("Python")) {
-            list.add(new Question("Which of these is a Python dictionary?", Arrays.asList("[]", "{}", "()", "<>"), 1, "Python", "Easy"));
+            list.add(new Question("p1_data", "Which of these is a Python dictionary?", Arrays.asList("[]", "{}", "()", "<>"), 1, "Python", "Easy", ""));
         }
         
         // Fill remaining with generated variants to reach 150
@@ -70,7 +70,7 @@ public class QuizData {
             String qText = topic + " Advanced Question " + (i + 1);
             List<String> options = Arrays.asList("Option A Value", "Option B Value", "Option C Value", "Option D Value");
             String diff = (i % 3 == 0) ? "Hard" : (i % 2 == 0 ? "Medium" : "Easy");
-            list.add(new Question(qText, options, 0, topic, diff));
+            list.add(new Question(topic + "_data_" + i, qText, options, 0, topic, diff, ""));
         }
         return list;
     }
